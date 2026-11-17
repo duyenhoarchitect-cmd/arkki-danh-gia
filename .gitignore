@@ -1,0 +1,6 @@
+dist/
+node_modules/
+*.xlsx
+seed*.json
+backup*.json
+.env

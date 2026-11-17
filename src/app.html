@@ -1,0 +1,1182 @@
+<title>Arkki Đánh giá học sinh</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap">
+<style>
+/* Layout: sticky context bar (học kỳ / trường / lớp) over a tabbed work area; the grading sheet is the home view. */
+:root {
+  --paper: #f7f9f2; --surface: #ffffff; --sunk: #eef2e6;
+  --ink: #1d2618; --muted: #5d6a55; --line: #d9e0cd;
+  --leaf: #6f9e14; --leaf-ink: #ffffff; --leaf-soft: #e8f2d2;
+  --rose: #c92c72; --rose-soft: #fbe6ef;
+  --warn: #a86400; --warn-soft: #fdf0d9; --bad: #b3261e;
+  --base: #3f6fc4;
+  --f-display: "Lexend", "Be Vietnam Pro", system-ui, sans-serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121611; --surface: #1a2018; --sunk: #232b20;
+  --ink: #e6ecdf; --muted: #a0ab96; --line: #2f3a2a;
+  --leaf: #9ccc3c; --leaf-ink: #142008; --leaf-soft: #263317;
+  --rose: #ef6aa7; --rose-soft: #3a1a29;
+  --warn: #f0b35a; --warn-soft: #3a2b12; --bad: #f2867f; --base: #7aa2ec;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #121611; --surface: #1a2018; --sunk: #232b20;
+  --ink: #e6ecdf; --muted: #a0ab96; --line: #2f3a2a;
+  --leaf: #9ccc3c; --leaf-ink: #142008; --leaf-soft: #263317;
+  --rose: #ef6aa7; --rose-soft: #3a1a29;
+  --warn: #f0b35a; --warn-soft: #3a2b12; --bad: #f2867f; --base: #7aa2ec;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { background: var(--paper); color: var(--ink); }
+body { font: 14px/1.5 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; } h3 { font-size: 1.02rem; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand img { height: 30px; width: auto; border-radius: 4px; }
+.brand b { font-family: var(--f-display); font-size: 1rem; white-space: nowrap; }
+.ctx { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 420px; }
+.ctx label { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; gap: 2px; flex: 1 1 130px; min-width: 0; }
+select, input[type=text], input[type=date], input[type=number], textarea {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; width: 100%; min-width: 0; }
+select { font-weight: 600; }
+textarea { resize: vertical; line-height: 1.45; }
+.save { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.save.err { color: var(--bad); font-weight: 600; }
+.who { display: flex; align-items: center; gap: 8px; font-size: 12.5px; white-space: nowrap; }
+.who b { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.auth { max-width: 420px; margin: 8vh auto 0; display: grid; gap: 14px; }
+.auth h1 { font-size: 1.5rem; }
+.auth form { display: grid; gap: 10px; }
+.auth .err { color: var(--bad); font-size: 13px; min-height: 1em; }
+body.locked .ctx, body.locked .tabs, body.locked #saveState { display: none; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0; }
+.tabs button { border: 0; background: none; padding: 10px 12px 9px; border-bottom: 3px solid transparent; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.tabs button[aria-selected=true] { color: var(--ink); border-color: var(--leaf); }
+
+main { padding-block: 18px 60px; }
+.view { display: grid; gap: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.row > .grow { flex: 1 1 auto; min-width: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12.5px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; font-weight: 600; }
+.btn:hover { border-color: var(--leaf); }
+.btn.pri { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); }
+.btn.rose { background: var(--rose); color: #fff; border-color: var(--rose); }
+.btn.ghost { border-color: transparent; background: none; color: var(--muted); }
+.btn.danger { color: var(--bad); }
+.btn.arm { background: var(--bad); color: #fff; border-color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: default; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.pill.ok { background: var(--leaf-soft); color: var(--leaf); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.rose { background: var(--rose-soft); color: var(--rose); }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--r); }
+.empty b { color: var(--ink); display: block; font-family: var(--f-display); margin-bottom: 4px; }
+.note-box { background: var(--warn-soft); color: var(--ink); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+
+/* lessons strip */
+.lessons { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.lesson { flex: 0 0 auto; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; text-align: left; min-width: 78px; }
+.lesson b { display: block; font-family: var(--f-display); font-size: 13px; }
+.lesson span { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lesson .bar { display: block; height: 3px; border-radius: 3px; background: var(--sunk); margin-top: 4px; overflow: hidden; }
+.lesson .bar i { display: block; height: 100%; background: var(--leaf); }
+.lesson[aria-pressed=true] { border-color: var(--leaf); background: var(--leaf-soft); }
+.lesson.base b::after { content: " · đầu kỳ"; font-weight: 500; color: var(--base); font-size: 11px; }
+
+/* grading sheet */
+.sheet { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.sheet table { border-collapse: collapse; width: 100%; min-width: 760px; }
+.sheet th, .sheet td { border-bottom: 1px solid var(--line); padding: 8px; vertical-align: top; text-align: left; }
+.sheet th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--sunk); position: sticky; top: 0; font-weight: 600; }
+.sheet tr.absent td { background: var(--sunk); }
+.sheet tr.absent .scores { opacity: .35; pointer-events: none; }
+.sheet td.n { color: var(--muted); font-variant-numeric: tabular-nums; width: 34px; }
+.sheet td.name { min-width: 150px; font-weight: 600; }
+.sheet td.name small { display: block; font-weight: 400; color: var(--muted); font-size: 11.5px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); width: 32px; height: 32px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed=true] { background: var(--leaf); color: var(--leaf-ink); }
+.seg button:hover:not([aria-pressed=true]) { background: var(--leaf-soft); }
+.scores { display: flex; gap: 8px 12px; flex-wrap: wrap; }
+.scores .sc { display: flex; flex-direction: column; gap: 3px; }
+.scores .sc span { font-size: 11px; color: var(--muted); }
+td.note { width: 38%; }
+td.note textarea { min-height: 56px; min-width: 220px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.sugg button { border: 1px dashed var(--line); background: var(--sunk); border-radius: 8px; padding: 4px 8px; font-size: 12px; text-align: left; }
+.sugg button:hover { border-color: var(--leaf); }
+
+/* summary */
+.sum th, .sum td { white-space: nowrap; }
+.sum td.v { font-variant-numeric: tabular-nums; text-align: center; }
+.sum tr.click { cursor: pointer; }
+.sum tr.click:hover td { background: var(--leaf-soft); }
+.sum tr.on td { background: var(--leaf-soft); }
+.detail { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 820px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.radar svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 600px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.final-text { min-height: 280px; font-size: 13.5px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 13px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* catalog */
+.cat { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .cat { grid-template-columns: minmax(0, 1fr); } }
+.list { display: flex; flex-direction: column; gap: 4px; }
+.list button.item { text-align: left; border: 1px solid transparent; background: none; border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; gap: 8px; }
+.list button.item:hover { background: var(--sunk); }
+.list button.item[aria-current=true] { background: var(--leaf-soft); border-color: var(--leaf); font-weight: 600; }
+.subtabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.subtabs button { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 99px; font-weight: 600; font-size: 13px; }
+.subtabs button[aria-pressed=true] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.edit table { border-collapse: collapse; width: 100%; min-width: 620px; }
+.edit th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); text-align: left; padding: 6px; }
+.edit td { padding: 3px; vertical-align: top; }
+.edit td input, .edit td textarea { padding: 6px 8px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.rub { overflow-x: auto; }
+.rub table { border-collapse: collapse; min-width: 720px; width: 100%; }
+.rub th, .rub td { border: 1px solid var(--line); padding: 6px; vertical-align: top; font-size: 13px; }
+.rub th { background: var(--sunk); text-align: left; }
+.rub textarea { min-height: 70px; border: 0; padding: 4px; background: transparent; }
+.rub td.missing { background: var(--warn-soft); }
+details summary { cursor: pointer; font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .lesson .bar i { transition: width .3s ease; } }
+@media (max-width: 640px) {
+  .sheet table, .sheet thead, .sheet tbody, .sheet tr, .sheet td { display: block; min-width: 0; }
+  .sheet table { min-width: 0; }
+  .sheet thead { display: none; }
+  .sheet tr { border-bottom: 1px solid var(--line); padding: 8px 4px; }
+  .sheet td { border: 0; padding: 4px 6px; }
+  .sheet td.n { display: none; }
+  td.note textarea { min-width: 0; }
+}
+</style>
+
+<header class="top">
+  <div class="wrap gut">
+    <div class="brand"><img src="data:image/png;base64,%%IMG1%%" alt="Arkki"><b>Đánh giá học sinh</b></div>
+    <div class="ctx">
+      <label>Học kỳ<select id="selSem"></select></label>
+      <label>Trường<select id="selSchool"></select></label>
+      <label>Lớp<select id="selClass"></select></label>
+    </div>
+    <span class="save" id="saveState" aria-live="polite"></span>
+    <span class="who" id="who" hidden></span>
+  </div>
+  <div class="wrap gut">
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="cham">Chấm điểm</button>
+      <button role="tab" data-tab="tonghop">Tổng hợp &amp; nhận xét cuối kỳ</button>
+      <button role="tab" data-tab="danhmuc">Danh mục</button>
+      <button role="tab" data-tab="caidat">Cài đặt mẫu in</button>
+    </nav>
+  </div>
+</header>
+<main class="gut"><div class="wrap view" id="view"></div></main>
+
+<!--LIBS-->
+<script>
+/*EXPORT_JS*/
+</script>
+<script>
+(() => {
+'use strict';
+const IMAGES = { logo: '%%IMG1%%', tagline: '%%IMG2%%', signature: '%%IMG3%%' };
+const COMPS = [
+  { code: 'C01', name: 'Chú tâm vào mục tiêu' }, { code: 'C02', name: 'Hợp tác' }, { code: 'C03', name: 'Kiên định' },
+  { code: 'C04', name: 'Tò mò' }, { code: 'C05', name: 'Tưởng tượng' }];
+const COMP_NAME = Object.fromEntries(COMPS.map(c => [c.code, c.name]));
+const DEFAULT_RUBRIC = {
+  C01: { 1: 'Dễ phân tán và cần nhắc lại nhiệm vụ nhiều lần.', 2: 'Duy trì sự tập trung trong phần lớn hoạt động và hoàn thành nhiệm vụ chính.', 3: 'Tập trung bền bỉ, tự điều chỉnh thao tác và hoàn thiện sản phẩm theo mục tiêu.', 4: '' },
+  C02: { 1: 'Tham gia nhóm khi được nhắc và cần hỗ trợ để chia sẻ vật liệu.', 2: 'Biết lắng nghe, chia sẻ và phối hợp trong nhiệm vụ chung.', 3: 'Chủ động hỗ trợ bạn, trao đổi ý tưởng và góp phần tích cực vào kết quả nhóm.', 4: '' },
+  C03: { 1: 'Dễ dừng lại khi gặp khó khăn và cần hỗ trợ thường xuyên.', 2: 'Tiếp tục thực hiện sau khi được động viên hoặc hướng dẫn.', 3: 'Chủ động thử cách khác, sửa lỗi và theo đuổi ý tưởng đến khi hoàn thành.', 4: '' },
+  C04: { 1: 'Quan sát khi được nhắc và đặt ít câu hỏi về chủ đề hoặc vật liệu.', 2: 'Chủ động quan sát, thử nghiệm và đặt câu hỏi đơn giản.', 3: 'Tích cực khám phá nhiều khả năng, đặt câu hỏi và liên hệ với trải nghiệm riêng.', 4: '' },
+  C05: { 1: 'Cần gợi ý để hình thành ý tưởng và lựa chọn hình ảnh quen thuộc.', 2: 'Tạo được ý tưởng riêng từ gợi ý và bổ sung một số chi tiết.', 3: 'Phát triển ý tưởng phong phú, độc đáo và linh hoạt biến đổi khi thực hiện.', 4: '' },
+};
+const DEFAULT_SETTINGS = {
+  title: 'GHI NHẬN HỌC SINH HẰNG NGÀY\nDAILY PUPIL RECORD',
+  totalLabel: 'Tổng điểm',
+  levels: { 1: { name: 'Bắt đầu', desc: 'Biểu hiện chưa rõ ràng hay chưa thể hiện nhiều, rất ít' }, 2: { name: 'Cơ bản', desc: 'Biểu hiện được cơ bản, một ít' },
+    3: { name: 'Nâng cao', desc: 'Biểu hiện tốt, cụ thể, chi tiết, thường xuyên' }, 4: { name: 'Thành thạo', desc: 'Biểu hiện rất tốt, rất chi tiết, thường xuyên và thành thạo' } },
+  commentTpl: 'Sau quá trình thực hành các dự án của [HOC_KY], [HO_TEN_HOC_SINH] đã nỗ lực phát triển các kỹ năng và tư duy sáng tạo của bản thân thông qua các thành quả sau:\n\n- Tiêu chí sáng tạo có sự tiến bộ rõ nhất:\n[TIEUCHI_CHENHLECH]\n- Tiêu chí sáng tạo hiện nay học sinh thể hiện tốt nhất:\n[CAPDO_CAONHAT]\n- Tiêu chí sáng tạo hiện nay học sinh có thể phát triển tốt hơn:\n[CAPDO_THAPNHAT]\n\nBên cạnh đó, nhận xét riêng của giáo viên sau quá trình học [HOC_KY] của học sinh là:\n[GIAOVIEN_NHANXET]\nĐề xuất của giáo viên dành cho quá trình phát triển năng lực sáng tạo của học sinh sắp tới:\n[GIAOVIEN_GIUPDO]\nCuối cùng, mong rằng [HO_TEN_HOC_SINH] sẽ luôn tận hưởng hành trình Vui chơi - Sáng tạo - Thành công trong tương lai!',
+  overview: 'Tổng quan về cách đánh giá:\n- Giáo viên đánh giá dựa theo hành vi hay cấp độ biểu hiện của học sinh thông qua sự quan sát trong các buổi học và phác thảo cá nhân.\n- Mật độ hành vi sẽ thể hiện cấp độ của một kỹ năng của học sinh mà giáo viên có thể quan sát được.\n- Các hành vi được quan sát có thể được giáo viên cập nhật vì tính linh hoạt và biểu hiện đa chiều của nhiều độ tuổi và cá nhân.\n- Các cấp độ của một kỹ năng là biểu hiện bên ngoài của các kỹ năng bên trong học sinh, tại thời điểm giáo viên ghi nhận. Các cấp độ ghi nhận không biểu hiện hoàn toàn năng lực bên trong của mỗi học sinh, vì tiềm năng của con người là vô hạn.',
+  signerTitle: 'Giám đốc chuyên môn', signerName: 'Hồ Thị Mỹ Duyên',
+  contact: '🏠: 94 Hoàng Trọng Mậu, khu dân cư Him Lam, Phường Tân Hưng, Quận 7, TPHCM\n☎: (+84) 902-414-978\n📧: xinchao@arkki.edu.vn\n🌐: https://www.facebook.com/vietnamarkki',
+};
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const fmt2 = x => x == null ? '–' : (Math.round(x * 100) / 100).toFixed(2).replace('.', ',');
+const fmtNum = x => x == null ? '–' : (Number.isInteger(x) ? String(x) : fmt2(x));
+const fmtDate = d => { if (!d) return ''; const [y, m, dd] = d.split('-'); return dd + '/' + m + '/' + y; };
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name || a.date || '').localeCompare(String(b.name || b.date || ''), 'vi');
+const recId = (classId, studentId) => classId + '__' + studentId;
+const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+function parseDate(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === 'number') { const d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+  if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return y + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0'); }
+  if (/^\d{5}$/.test(s)) return parseDate(Number(s));
+  return '';
+}
+
+// ---------- storage: Supabase (web app), Claude shared db (artifact), or browser storage (trial) ----------
+const SB_TABLE = { semesters: 'semesters', schools: 'schools', classes: 'classes', students: 'students', lessons: 'lessons', records: 'records', settings: 'settings' };
+const snake = k => k === 'order' ? 'sort_order' : k.replace(/[A-Z]/g, c => '_' + c.toLowerCase());
+const camel = k => k === 'sort_order' ? 'order' : k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+const SKIP_COLS = new Set(['created_at', 'updated_at', 'updated_by']);
+function toRow(coll, id, data) {
+  if (coll === 'settings') return { id, data };
+  const r = { id }; for (const [k, v] of Object.entries(data)) if (k !== 'id') r[snake(k)] = v; return r;
+}
+function fromRow(coll, row) {
+  if (coll === 'settings') return { id: row.id, ...(row.data || {}) };
+  const o = {}; for (const [k, v] of Object.entries(row)) if (!SKIP_COLS.has(k)) o[camel(k)] = v; return o;
+}
+const Store = (() => {
+  let db = null, sb = null, mode = 'local';
+  const LKEY = 'arkki-local-db';
+  let local = lsGet(LKEY) || {};
+  const watchers = new Set();
+  const persist = () => { lsSet(LKEY, local); for (const w of watchers) w.fire(); };
+  const rows = (coll, field, value) => Object.entries(local[coll] || {}).map(([id, d]) => ({ id, ...d })).filter(r => !field || r[field] === value);
+  const deepMerge = (a, b) => { const o = { ...(a || {}) }; for (const [k, v] of Object.entries(b)) o[k] = v && typeof v === 'object' && !Array.isArray(v) ? deepMerge(o[k], v) : v; return o; };
+  const sbErr = e => { const m = e?.message || String(e); return { code: /row-level security|not allowed|permission/i.test(m) || e?.code === '42501' ? 'forbidden' : 'unavailable', message: m }; };
+  const sbCheck = r => { if (r.error) throw sbErr(r.error); return r.data; };
+  async function sbList(coll, field, value) {
+    let q = sb.from(SB_TABLE[coll]).select('*');
+    if (field) q = q.eq(snake(field), value);
+    return sbCheck(await q.limit(5000)).map(r => fromRow(coll, r));
+  }
+  return {
+    get mode() { return mode; },
+    get sb() { return sb; },
+    async init() {
+      const cfg = window.ARKKI_CONFIG;
+      if (cfg?.supabaseUrl && cfg?.supabaseKey && window.supabase) {
+        sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, { auth: { persistSession: true, autoRefreshToken: true } });
+        mode = 'supabase'; return mode;
+      }
+      try { if (window.claude?.use) db = await window.claude.use('db'); } catch { db = null; }
+      if (db) mode = 'db';
+      return mode;
+    },
+    watch(coll, field, value, cb, onErr) {
+      if (mode === 'supabase') {
+        let alive = true, timer = null;
+        const load = () => sbList(coll, field, value).then(r => { if (alive) cb(r); }).catch(e => onErr && onErr(e));
+        const later = () => { clearTimeout(timer); timer = setTimeout(load, 250); };
+        const ch = sb.channel('w-' + coll + '-' + (value || 'all') + '-' + Math.random().toString(36).slice(2, 7));
+        const spec = { schema: 'public', table: SB_TABLE[coll] };
+        ch.on('postgres_changes', field ? { ...spec, event: 'INSERT', filter: snake(field) + '=eq.' + value } : { ...spec, event: '*' }, later);
+        if (field) { ch.on('postgres_changes', { ...spec, event: 'UPDATE', filter: snake(field) + '=eq.' + value }, later); ch.on('postgres_changes', { ...spec, event: 'DELETE' }, later); }
+        ch.subscribe(st => { if (st === 'SUBSCRIBED') load(); });
+        load();
+        return () => { alive = false; clearTimeout(timer); sb.removeChannel(ch); };
+      }
+      if (mode === 'db') {
+        let q = db.collection(coll); if (field) q = q.where(field, '==', value);
+        return q.onSnapshot(s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => onErr && onErr(e));
+      }
+      const w = { fire: () => cb(rows(coll, field, value)) };
+      watchers.add(w); setTimeout(w.fire, 0);
+      return () => watchers.delete(w);
+    },
+    async list(coll, field, value) {
+      if (mode === 'supabase') return sbList(coll, field, value);
+      if (mode === 'db') { let q = db.collection(coll); if (field) q = q.where(field, '==', value); const s = await q.get(); return s.docs.map(d => ({ id: d.id, ...d.data() })); }
+      return rows(coll, field, value);
+    },
+    async set(coll, id, data) {
+      if (mode === 'supabase') { sbCheck(await sb.from(SB_TABLE[coll]).upsert(toRow(coll, id, data))); return; }
+      if (mode === 'db') return db.collection(coll).doc(id).set(data);
+      (local[coll] ||= {})[id] = JSON.parse(JSON.stringify(data)); persist();
+    },
+    async update(coll, id, data) {
+      if (mode === 'supabase') {
+        if (coll === 'records') {
+          const [classId, studentId] = id.split('__');
+          sbCheck(await sb.rpc('merge_record', { p_id: id, p_class_id: classId, p_student_id: studentId, p_patch: data }));
+          return;
+        }
+        if (coll === 'settings') { const cur = (await sbList('settings')).find(r => r.id === id) || {}; return this.set(coll, id, deepMerge(cur, data)); }
+        const row = toRow(coll, id, data); delete row.id;
+        sbCheck(await sb.from(SB_TABLE[coll]).update(row).eq('id', id));
+        return;
+      }
+      if (mode === 'db') return db.collection(coll).doc(id).update(data);
+      if (!local[coll]?.[id]) throw { code: 'invalid_argument', message: 'missing' };
+      local[coll][id] = deepMerge(local[coll][id], JSON.parse(JSON.stringify(data))); persist();
+    },
+    async del(coll, id) {
+      if (mode === 'supabase') { sbCheck(await sb.from(SB_TABLE[coll]).delete().eq('id', id)); return; }
+      if (mode === 'db') return db.collection(coll).doc(id).delete();
+      if (local[coll]) delete local[coll][id]; persist();
+    },
+  };
+})();
+
+// ---------- state ----------
+const S = {
+  semesters: [], schools: [], classes: [], settings: { ...DEFAULT_SETTINGS },
+  students: [], lessons: [], records: {}, loadedClass: null,
+  sel: Object.assign({ sem: '', school: '', cls: '', lesson: '', student: '', tab: 'cham', catTab: 'hocsinh', catSchool: '' }, lsGet('arkki-sel') || {}),
+  canWrite: true, pending: 0, saveErr: '',
+};
+const saveSel = () => lsSet('arkki-sel', S.sel);
+// Without Supabase (trial / Claude artifact) everyone acts as staff.
+const isStaff = () => Store.mode !== 'supabase' || ['admin', 'manager'].includes(S.me?.role);
+const isAdmin = () => Store.mode !== 'supabase' || S.me?.role === 'admin';
+const ROLE_LABEL = { admin: 'Quản trị', manager: 'Quản lý chuyên môn', teacher: 'Giáo viên' };
+const visSems = () => isStaff() ? S.semesters : S.semesters.filter(x => S.classes.some(c => c.semesterId === x.id));
+const visSchools = () => isStaff() ? S.schools : S.schools.filter(x => S.classes.some(c => c.schoolId === x.id && c.semesterId === S.sel.sem));
+const school = () => S.schools.find(s => s.id === S.sel.school);
+const semester = () => S.semesters.find(s => s.id === S.sel.sem);
+const klass = () => S.classes.find(c => c.id === S.sel.cls);
+const activeComps = sc => (sc?.comps?.length ? COMPS.filter(c => sc.comps.includes(c.code)) : COMPS);
+const maxLevel = sc => sc?.maxLevel === 4 ? 4 : 3;
+const settings = () => ({ ...DEFAULT_SETTINGS, ...S.settings, levels: { ...DEFAULT_SETTINGS.levels, ...(S.settings.levels || {}) } });
+const rubricText = (sc, code, lvl) => (sc?.rubric?.[code]?.[lvl] ?? '').trim();
+
+function setSave(kind, msg) {
+  const el = $('#saveState');
+  el.classList.toggle('err', kind === 'err');
+  el.textContent = msg || '';
+}
+async function write(fn) {
+  S.pending++; setSave('', 'Đang lưu…');
+  try { await fn(); S.pending--; if (!S.pending) setSave('', Store.mode === 'local' ? 'Đã lưu trên máy này' : 'Đã lưu'); }
+  catch (e) {
+    S.pending--;
+    const code = e?.code;
+    if (code === 'forbidden') setSave('err', 'Bạn không có quyền sửa mục này. Nhờ quản lý kiểm tra phân quyền.');
+    else if (code === 'invalid_argument' && Store.mode === 'db') { S.canWrite = false; setSave('err', 'Bạn chỉ có quyền xem. Nhờ người quản lý cấp quyền Contributor.'); }
+    else if (code === 'quota_exceeded') setSave('err', 'Bộ nhớ dữ liệu đã đầy. Hãy xóa bớt học kỳ cũ.');
+    else setSave('err', 'Lưu lỗi. Kiểm tra mạng rồi thử lại.');
+    throw e;
+  }
+}
+
+// ---------- calculations (spec BR-01..03) ----------
+function levelOf(x, max) { if (x == null) return null; return Math.min(max, Math.max(1, Math.floor(x + 0.5 + 1e-9))); }
+function studentStats(studentId, lessons, rec, comps) {
+  const s = rec?.s || {};
+  const baseLesson = lessons[0];
+  const baseline = {}, final = {}, count = {};
+  for (const c of comps) {
+    const b = baseLesson && !s[baseLesson.id]?.absent ? s[baseLesson.id]?.[c.code] : null;
+    baseline[c.code] = typeof b === 'number' ? b : null;
+    let sum = 0, n = 0;
+    for (const l of lessons.slice(1)) { const e = s[l.id]; if (!e || e.absent) continue; const v = e[c.code]; if (typeof v === 'number') { sum += v; n++; } }
+    final[c.code] = n ? sum / n : null; count[c.code] = n;
+  }
+  let graded = 0;
+  for (const l of lessons) { const e = s[l.id]; if (e && !e.absent && comps.every(c => typeof e[c.code] === 'number')) graded++; }
+  return { baseline, final, count, graded };
+}
+function genComment(st, stats, sc, sem, fin) {
+  const comps = activeComps(sc), max = maxLevel(sc), set = settings();
+  const EPS = 1e-9;
+  const withFinal = comps.filter(c => stats.final[c.code] != null);
+  const warnings = [];
+  const desc = (c, l) => { const t = rubricText(sc, c.code, l); if (!t) warnings.push('Thiếu mô tả cấp ' + l + ' cho "' + c.name + '" (Danh mục → Trường).'); return t; };
+  let best = '', low = '', prog = '';
+  if (withFinal.length < comps.length) warnings.push('Chưa đủ dữ liệu cuối kỳ cho: ' + comps.filter(c => stats.final[c.code] == null).map(c => c.name).join(', ') + '.');
+  if (withFinal.length) {
+    const vals = withFinal.map(c => stats.final[c.code]);
+    const hi = Math.max(...vals), lo = Math.min(...vals);
+    const top = withFinal.filter(c => stats.final[c.code] > hi - EPS);
+    const bottom = withFinal.filter(c => stats.final[c.code] < lo + EPS);
+    const same = hi - lo < EPS && withFinal.length > 1;
+    best = (same ? '+ Các tiêu chí đang thể hiện ở mức tương đương.\n' : '') +
+      top.map(c => { const x = stats.final[c.code], l = levelOf(x, max); return '+ ' + c.name + ', cấp độ ' + fmt2(x) + ': ' + desc(c, l); }).join('\n');
+    low = bottom.map(c => {
+      const x = stats.final[c.code], l = levelOf(x, max);
+      let t = '+ ' + c.name + ', cấp độ ' + fmt2(x) + ': ' + desc(c, l);
+      if (l < max) t += (/[.!?…]$/.test(t) ? ' ' : '. ') + 'Cấp độ ' + (l + 1) + ' của tiêu chí này mà học sinh có thể đạt được tiếp theo là: ' + desc(c, l + 1);
+      else t += (/[.!?…]$/.test(t) ? ' ' : '. ') + 'Học sinh đã ở cấp độ cao nhất, tiếp tục duy trì và mở rộng vận dụng trong các dự án mới.';
+      return t;
+    }).join('\n');
+    const withDelta = withFinal.filter(c => stats.baseline[c.code] != null);
+    if (withDelta.length) {
+      const deltas = withDelta.map(c => stats.final[c.code] - stats.baseline[c.code]);
+      const dmax = Math.max(...deltas);
+      if (dmax > EPS) {
+        prog = withDelta.filter((c, i) => deltas[i] > dmax - EPS).map(c => {
+          const b = stats.baseline[c.code], f = stats.final[c.code];
+          return '+ ' + c.name + ': từ cấp độ ' + fmtNum(b) + ' đầu kỳ lên ' + fmt2(f) + ' cuối kỳ. ' + desc(c, levelOf(f, max));
+        }).join('\n');
+      } else {
+        prog = '+ Học sinh duy trì mức biểu hiện ổn định ở các tiêu chí so với đầu kỳ.';
+        if (dmax < -EPS) warnings.push('Không tiêu chí nào tăng so với đầu kỳ. Giáo viên nên rà soát lại trước khi in.');
+      }
+    } else warnings.push('Chưa có điểm đầu kỳ (buổi 1) nên không tính được tiến bộ.');
+  }
+  const gvNx = [fin.general, fin.positive, fin.develop].map(x => (x || '').trim()).filter(Boolean).join('\n');
+  const gvGd = (fin.suggest || '').trim();
+  if (!gvGd) warnings.push('Chưa có đề xuất phát triển của giáo viên.');
+  const keys = { '[HOC_KY]': (sem?.name || '').replace(/^./, ch => ch.toLowerCase()), '[HO_TEN_HOC_SINH]': st.name, '[TIEUCHI_CHENHLECH]': prog, '[CAPDO_CAONHAT]': best, '[CAPDO_THAPNHAT]': low, '[GIAOVIEN_NHANXET]': gvNx, '[GIAOVIEN_GIUPDO]': gvGd };
+  const out = [];
+  for (const line of set.commentTpl.split('\n')) {
+    const t = line.trim();
+    if (t in keys && !keys[t]) { if (out.length && /:\s*$/.test(out[out.length - 1])) out.pop(); continue; }
+    out.push(line.replace(/\[[A-Z_]+\]/g, k => k in keys ? keys[k] : k));
+  }
+  return { text: out.join('\n').replace(/\n{3,}/g, '\n\n').trim(), warnings: [...new Set(warnings)] };
+}
+
+// ---------- subscriptions ----------
+let classUnsubs = [];
+function subscribeGlobal() {
+  const onErr = () => setSave('err', 'Mất kết nối dữ liệu. Tải lại trang để thử lại.');
+  Store.watch('semesters', null, null, r => { S.semesters = r.sort((a, b) => String(b.year).localeCompare(String(a.year)) || String(b.name).localeCompare(String(a.name))); fixSel('sem'); }, onErr);
+  Store.watch('schools', null, null, r => { S.schools = r.sort((a, b) => a.name.localeCompare(b.name, 'vi')); fixSel('sch'); }, onErr);
+  Store.watch('classes', null, null, r => { S.classes = r.sort((a, b) => a.name.localeCompare(b.name, 'vi', { numeric: true })); fixSel('cls'); }, onErr);
+  Store.watch('settings', null, null, r => { const m = r.find(x => x.id === 'main'); S.settings = m ? { ...m } : { ...DEFAULT_SETTINGS }; render(); }, onErr);
+}
+function subscribeClass() {
+  if (S.loadedClass === S.sel.cls) return;
+  classUnsubs.forEach(u => u()); classUnsubs = [];
+  S.students = []; S.lessons = []; S.records = {}; S.loadedClass = S.sel.cls;
+  if (!S.sel.cls) return;
+  const id = S.sel.cls;
+  classUnsubs.push(Store.watch('students', 'classId', id, r => { S.students = r.sort(byOrder); render(); }));
+  classUnsubs.push(Store.watch('lessons', 'classId', id, r => { S.lessons = r.sort((a, b) => (a.order - b.order) || String(a.date).localeCompare(String(b.date))); render(); }));
+  classUnsubs.push(Store.watch('records', 'classId', id, r => {
+    // keep local values for fields with unsaved typing
+    const next = {}; for (const x of r) next[x.studentId] = x;
+    for (const [sid, p] of Object.entries(pendingNotes)) if (next[sid]) mergeLocal(next[sid], p);
+    S.records = next; render();
+  }));
+}
+const loaded = new Set();
+function fixSel(which) {
+  if (which) loaded.add(which);
+  if (loaded.size < 3) { renderCtx(); return; }
+  const sems = visSems();
+  if (!sems.find(s => s.id === S.sel.sem)) S.sel.sem = sems[0]?.id || '';
+  const schs = visSchools();
+  if (!schs.find(s => s.id === S.sel.school)) S.sel.school = schs[0]?.id || '';
+  const cls = S.classes.filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
+  if (!cls.find(c => c.id === S.sel.cls)) S.sel.cls = cls[0]?.id || '';
+  saveSel(); renderCtx(); subscribeClass(); render();
+}
+function renderCtx() {
+  const opt = (v, label, cur) => '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>';
+  $('#selSem').innerHTML = visSems().length ? visSems().map(s => opt(s.id, s.name + ' · ' + s.year, S.sel.sem)).join('') : '<option value="">Chưa có học kỳ</option>';
+  $('#selSchool').innerHTML = visSchools().length ? visSchools().map(s => opt(s.id, s.name, S.sel.school)).join('') : '<option value="">Chưa có trường</option>';
+  const cls = S.classes.filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
+  $('#selClass').innerHTML = cls.length ? cls.map(c => opt(c.id, c.name, S.sel.cls)).join('') : '<option value="">Chưa có lớp</option>';
+  if (!isStaff() && !['cham', 'tonghop'].includes(S.sel.tab)) S.sel.tab = 'cham';
+  document.querySelectorAll('#tabs button').forEach(b => { b.setAttribute('aria-selected', String(b.dataset.tab === S.sel.tab)); b.hidden = !isStaff() && !['cham', 'tonghop'].includes(b.dataset.tab); });
+}
+['selSem', 'selSchool', 'selClass'].forEach((id, i) => $('#' + id).addEventListener('change', e => {
+  S.sel[['sem', 'school', 'cls'][i]] = e.target.value; S.sel.lesson = ''; S.sel.student = ''; fixSel();
+}));
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (!b) return; S.sel.tab = b.dataset.tab; saveSel(); renderCtx(); render(true); });
+
+// ---------- render scheduling: never clobber a field being typed in ----------
+let renderPending = false;
+function render(force) {
+  const a = document.activeElement;
+  if (!force && a && $('#view').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { renderPending = true; return; }
+  renderPending = false;
+  const y = window.scrollY;
+  const fn = { cham: viewCham, tonghop: viewTongHop, danhmuc: viewDanhMuc, caidat: viewCaiDat }[S.sel.tab] || viewCham;
+  $('#view').innerHTML = fn();
+  window.scrollTo(0, y);
+  afterRender();
+}
+$('#view').addEventListener('focusout', () => setTimeout(() => { if (renderPending) render(); }, 0));
+function afterRender() {
+  document.querySelectorAll('textarea[data-auto]').forEach(autosize);
+  if (S.sel.tab === 'tonghop') drawRadar();
+}
+function autosize(t) { t.style.height = 'auto'; t.style.height = Math.min(600, t.scrollHeight + 2) + 'px'; }
+
+function needClass() {
+  if (!isStaff() && !S.classes.length) return '<div class="empty"><b>Bạn chưa được phân công lớp nào</b>Nhờ quản lý chuyên môn vào Danh mục → Giáo viên để phân công lớp cho bạn, rồi tải lại trang.</div>';
+  if (!S.semesters.length || !S.schools.length) return '<div class="empty"><b>Bắt đầu bằng việc tạo học kỳ và trường</b>Vào tab <b style="display:inline">Danh mục</b> để thêm năm học, học kỳ, trường và lớp.</div>';
+  if (!S.sel.cls) return '<div class="empty"><b>Trường này chưa có lớp trong học kỳ đã chọn</b>Vào tab Danh mục → Lớp để thêm lớp, hoặc chọn học kỳ khác ở trên.</div>';
+  return '';
+}
+
+// ---------- view: Chấm điểm ----------
+const pendingNotes = {}; // studentId -> {s:{lessonId:{note}}}
+function mergeLocal(rec, patch) { for (const [k, v] of Object.entries(patch)) { if (v && typeof v === 'object' && !Array.isArray(v)) { rec[k] = rec[k] && typeof rec[k] === 'object' ? { ...rec[k] } : {}; mergeLocal(rec[k], v); } else rec[k] = v; } }
+
+function viewCham() {
+  const nc = needClass(); if (nc) return nc;
+  const sc = school(), comps = activeComps(sc), max = maxLevel(sc), lv = settings().levels;
+  if (!S.lessons.length || !S.students.length) return '<div class="empty"><b>Lớp chưa có ' + (!S.students.length ? 'học sinh' : 'danh sách bài học') + '</b>Vào Danh mục → ' + (!S.students.length ? 'Học sinh' : 'Bài học') + ' để nhập (dán từ Excel được).</div>';
+  if (!S.lessons.find(l => l.id === S.sel.lesson)) S.sel.lesson = S.lessons[0].id;
+  const L = S.lessons.find(l => l.id === S.sel.lesson), li = S.lessons.indexOf(L);
+  const fullCount = l => S.students.filter(st => { const e = S.records[st.id]?.s?.[l.id]; return e && (e.absent || comps.every(c => typeof e[c.code] === 'number')); }).length;
+  const strip = S.lessons.map((l, i) => {
+    const pct = Math.round(100 * fullCount(l) / S.students.length);
+    return '<button class="lesson' + (i === 0 ? ' base' : '') + '" data-act="lesson" data-id="' + l.id + '" aria-pressed="' + (l.id === L.id) + '"><b>B' + String(i + 1).padStart(2, '0') + '</b><span>' + esc(fmtDate(l.date)) + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></button>';
+  }).join('');
+  const done = fullCount(L);
+  const lib = (sc?.library || []);
+  const rowsHtml = S.students.map((st, i) => {
+    const e = S.records[st.id]?.s?.[L.id] || {};
+    const scores = comps.map(c => '<div class="sc"><span>' + esc(c.name) + '</span><div class="seg" role="group" aria-label="' + esc(c.name) + '">' +
+      Array.from({ length: max }, (_, k) => k + 1).map(v => '<button data-act="score" data-st="' + st.id + '" data-c="' + c.code + '" data-v="' + v + '" aria-pressed="' + (e[c.code] === v) + '" title="' + esc(lv[v]?.name || '') + ': ' + esc(rubricText(sc, c.code, v)) + '">' + v + '</button>').join('') +
+      '</div></div>').join('');
+    const levelsSeen = new Set(comps.map(c => e[c.code]).filter(Boolean));
+    const sug = lib.filter(x => (!x.lesson || x.lesson === L.project) && (!levelsSeen.size || levelsSeen.has(Number(x.level)))).slice(0, 4);
+    const missing = !e.absent && comps.some(c => typeof e[c.code] !== 'number');
+    return '<tr class="' + (e.absent ? 'absent' : '') + '"><td class="n">' + (i + 1) + '</td>' +
+      '<td class="name">' + esc(st.name) + '<small>' + esc(st.code || '') + '</small>' +
+      '<label class="chk"><input type="checkbox" data-act="absent" data-st="' + st.id + '"' + (e.absent ? ' checked' : '') + '> Vắng</label> ' +
+      (e.absent ? '' : missing ? '<span class="pill warn">Chưa đủ</span>' : '<span class="pill ok">Đủ điểm</span>') + '</td>' +
+      '<td><div class="scores">' + scores + '</div></td>' +
+      '<td class="note"><textarea data-auto data-act="note" data-st="' + st.id + '" id="note-' + st.id + '-' + L.id + '" rows="2" placeholder="Nhận xét hằng ngày…">' + esc(e.note || '') + '</textarea>' +
+      (sug.length ? '<div class="sugg">' + sug.map(x => '<button data-act="sugg" data-st="' + st.id + '" title="' + esc(COMP_NAME[x.comp] || '') + ' · cấp ' + esc(x.level) + '">+ ' + esc(x.text) + '</button>').join('') + '</div>' : '') +
+      '</td></tr>';
+  }).join('');
+  return '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(klass()?.name) + ' · Buổi ' + (li + 1) + (li === 0 ? ' <span class="pill" style="color:var(--base)">Mốc đầu kỳ</span>' : '') + '</h2>' +
+    '<div class="muted">' + esc(fmtDate(L.date)) + ' · ' + esc(L.project || 'Chưa có tên dự án') + (L.content ? ' · ' + esc(L.content) : '') + '</div></div>' +
+    '<span class="pill ' + (done === S.students.length ? 'ok' : 'rose') + '">Đã chấm ' + done + '/' + S.students.length + '</span>' +
+    '<button class="btn" data-act="prevLesson"' + (li === 0 ? ' disabled' : '') + '>← Buổi trước</button><button class="btn" data-act="nextLesson"' + (li === S.lessons.length - 1 ? ' disabled' : '') + '>Buổi sau →</button></div>' +
+    '<div class="lessons" style="margin-top:12px">' + strip + '</div></section>' +
+    (Store.mode === 'local' ? '<div class="note-box">Đang lưu dữ liệu trên trình duyệt này (chế độ thử, chưa kết nối cơ sở dữ liệu).</div>' : '') +
+    '<div class="sheet"><table><thead><tr><th>#</th><th>Học sinh</th><th>Điểm (1–' + max + ')</th><th>Nhận xét hằng ngày</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+    '<p class="muted small">Bấm lại vào điểm đang chọn để xóa. Ô trống không bị tính là 0. Buổi 1 là mốc đầu kỳ; điểm cuối kỳ là trung bình các buổi từ 2 trở đi.</p>';
+}
+
+async function patchRecord(studentId, patch) {
+  const id = recId(S.sel.cls, studentId);
+  const exists = !!S.records[studentId];
+  const rec = S.records[studentId] || (S.records[studentId] = { id, classId: S.sel.cls, studentId, s: {}, fin: {} });
+  mergeLocal(rec, patch);
+  await write(async () => {
+    if (exists || Store.mode === 'supabase') { try { await Store.update('records', id, patch); return; } catch (e) { if (e?.code !== 'invalid_argument' || Store.mode !== 'db') throw e; } }
+    const full = { classId: S.sel.cls, studentId, s: rec.s || {}, fin: rec.fin || {} };
+    await Store.set('records', id, full);
+  });
+}
+const noteTimers = {};
+function queueNote(studentId, patch) {
+  pendingNotes[studentId] = pendingNotes[studentId] || {};
+  mergeLocal(pendingNotes[studentId], patch);
+  const rec = S.records[studentId] || (S.records[studentId] = { classId: S.sel.cls, studentId, s: {}, fin: {} });
+  mergeLocal(rec, patch);
+  setSave('', 'Chưa lưu…');
+  clearTimeout(noteTimers[studentId]);
+  noteTimers[studentId] = setTimeout(() => flushNote(studentId), 900);
+}
+function flushNote(studentId) {
+  clearTimeout(noteTimers[studentId]);
+  const p = pendingNotes[studentId]; if (!p) return;
+  delete pendingNotes[studentId];
+  patchRecord(studentId, p).catch(() => { pendingNotes[studentId] = Object.assign(p, pendingNotes[studentId] || {}); });
+}
+window.addEventListener('beforeunload', e => { if (Object.keys(pendingNotes).length || S.pending) { e.preventDefault(); e.returnValue = ''; } });
+
+// ---------- view: Tổng hợp ----------
+function viewTongHop() {
+  const nc = needClass(); if (nc) return nc;
+  const sc = school(), comps = activeComps(sc), sem = semester();
+  if (!S.students.length) return '<div class="empty"><b>Lớp chưa có học sinh</b>Vào Danh mục → Học sinh để nhập danh sách.</div>';
+  if (!S.students.find(s => s.id === S.sel.student)) S.sel.student = S.students[0].id;
+  const nL = Math.max(0, S.lessons.length - 1);
+  const rows = S.students.map((st, i) => {
+    const stats = studentStats(st.id, S.lessons, S.records[st.id], comps);
+    const fin = S.records[st.id]?.fin || {};
+    const hasGv = (fin.general || fin.positive || fin.develop) && fin.suggest;
+    return '<tr class="click' + (st.id === S.sel.student ? ' on' : '') + '" data-act="pickStudent" data-id="' + st.id + '"><td>' + (i + 1) + '</td><td><b>' + esc(st.name) + '</b></td>' +
+      comps.map(c => '<td class="v">' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b></td>').join('') +
+      '<td class="v">' + stats.graded + '/' + S.lessons.length + '</td><td>' + (hasGv ? '<span class="pill ok">Đã nhận xét</span>' : '<span class="pill warn">Chưa nhận xét</span>') + (fin.textEdited ? ' <span class="pill">Sửa tay</span>' : '') + '</td></tr>';
+  }).join('');
+  const st = S.students.find(s => s.id === S.sel.student);
+  const stats = studentStats(st.id, S.lessons, S.records[st.id], comps);
+  const fin = S.records[st.id]?.fin || {};
+  const g = genComment(st, stats, sc, sem, fin);
+  const finalText = fin.textEdited ? (fin.text || '') : g.text;
+  const idx = S.students.indexOf(st);
+  const field = (k, label, ph) => '<label class="field"><span>' + label + '</span><textarea data-auto data-act="fin" data-k="' + k + '" id="fin-' + k + '-' + st.id + '" rows="3" placeholder="' + ph + '">' + esc(fin[k] || '') + '</textarea></label>';
+  return '<section class="panel"><div class="row"><div class="grow"><h2>Tổng hợp lớp ' + esc(klass()?.name) + '</h2><div class="muted small">Đầu kỳ = buổi 1 · Cuối kỳ = trung bình buổi 2–' + S.lessons.length + ' (' + nL + ' buổi), bỏ qua buổi vắng và ô trống.</div></div>' +
+    '<button class="btn pri" data-act="exportClass">Xuất Excel cả lớp</button><button class="btn" data-act="exportSchool">Xuất tất cả lớp của trường</button></div>' +
+    '<div id="exportMsg" class="small muted" style="margin-top:8px"></div></section>' +
+    '<div class="sheet sum"><table><thead><tr><th>#</th><th>Học sinh</th>' + comps.map(c => '<th>' + esc(c.name) + '</th>').join('') + '<th>Buổi đủ điểm</th><th>Nhận xét cuối kỳ</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(st.name) + '</h2><div class="muted small">' + esc(st.code || '') + ' · ' + esc(klass()?.name) + ' · ' + esc(school()?.name) + '</div></div>' +
+    '<button class="btn" data-act="prevStudent"' + (idx === 0 ? ' disabled' : '') + '>← Học sinh trước</button><button class="btn" data-act="nextStudent"' + (idx === S.students.length - 1 ? ' disabled' : '') + '>Học sinh sau →</button>' +
+    '<button class="btn rose" data-act="exportOne">Xuất Excel học sinh này</button></div>' +
+    '<div class="detail" style="margin-top:14px"><div><div class="radar" id="radar"></div><div class="legend"><span><i style="background:var(--base)"></i>Đầu kỳ (buổi 1)</span><span><i style="background:var(--leaf)"></i>Cuối kỳ (TB buổi 2–' + S.lessons.length + ')</span></div>' +
+    '<dl class="kv" style="margin-top:12px">' + comps.map(c => '<dt>' + esc(c.name) + '</dt><dd>' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b> <span class="muted small">(' + stats.count[c.code] + '/' + nL + ' buổi)</span></dd>').join('') + '</dl></div>' +
+    '<div style="display:grid;gap:12px;min-width:0"><div class="fields">' +
+    field('general', 'Nhận xét chung', 'Ví dụ: Bạn năng nổ trong học tập…') + field('positive', 'Điểm tích cực', 'Điều học sinh làm tốt…') +
+    field('develop', 'Nội dung cần phát triển', 'Điều học sinh có thể làm tốt hơn…') + field('suggest', 'Đề xuất phát triển', 'Gợi ý cho học kỳ tới…') + '</div>' +
+    (g.warnings.length ? '<div class="note-box">' + g.warnings.map(esc).join('<br>') + '</div>' : '') +
+    '<label class="field"><span>Đoạn nhận xét in trên báo cáo ' + (fin.textEdited ? '<span class="pill">Đã sửa tay</span> <button class="btn ghost small" data-act="resetText">Tạo lại từ dữ liệu</button>' : '<span class="pill ok">Tự tạo từ điểm và nhận xét</span>') + '</span>' +
+    '<textarea class="final-text" data-auto data-act="finalText" id="final-' + st.id + '">' + esc(finalText) + '</textarea></label>' +
+    '<p class="muted small" style="margin:0">Sửa trực tiếp đoạn trên nếu cần. Khi đã sửa tay, đoạn văn không tự cập nhật theo điểm nữa cho đến khi bấm "Tạo lại từ dữ liệu".</p></div></div></section>';
+}
+function drawRadar() {
+  const el = $('#radar'); if (!el) return;
+  const sc = school(), comps = activeComps(sc), max = maxLevel(sc);
+  const st = S.students.find(s => s.id === S.sel.student); if (!st) return;
+  const stats = studentStats(st.id, S.lessons, S.records[st.id], comps);
+  const W = 380, H = 300, cx = W / 2, cy = 158, R = 100, n = comps.length;
+  const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [cx + Math.cos(a) * R * v / max, cy + Math.sin(a) * R * v / max]; };
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Biểu đồ năng lực">';
+  for (let k = 1; k <= max; k++) s += '<polygon points="' + comps.map((c, i) => pt(i, k).join(',')).join(' ') + '" fill="none" stroke="var(--line)" stroke-width="1"/>';
+  comps.forEach((c, i) => { const [x, y] = pt(i, max); s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="var(--line)"/>'; });
+  for (let k = 1; k <= max; k++) s += '<text x="' + (cx + 3) + '" y="' + (cy - R * k / max + 11) + '" font-size="9" fill="var(--muted)">' + k + '</text>';
+  const poly = (vals, color, op) => {
+    const ok = comps.every(c => vals[c.code] != null);
+    const pts = comps.map((c, i) => pt(i, vals[c.code] ?? 0));
+    let o = ok ? '<polygon points="' + pts.map(p => p.join(',')).join(' ') + '" fill="' + color + '" fill-opacity="' + op + '" stroke="' + color + '" stroke-width="2"/>' : '';
+    comps.forEach((c, i) => { if (vals[c.code] != null) o += '<circle cx="' + pts[i][0] + '" cy="' + pts[i][1] + '" r="3.5" fill="' + color + '"/>'; });
+    return o;
+  };
+  s += poly(stats.baseline, 'var(--base)', 0.08) + poly(stats.final, 'var(--leaf)', 0.18);
+  comps.forEach((c, i) => {
+    const [x, y] = pt(i, max * 1.2);
+    const anchor = Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end';
+    s += '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="' + anchor + '" font-size="11.5" font-weight="600" fill="var(--ink)">' + esc(c.name) + '</text>';
+  });
+  el.innerHTML = s + '</svg>';
+}
+
+// ---------- export ----------
+function exportData(cls, sch, sem, students, lessons, records, onlyStudentId) {
+  const comps = activeComps(sch), set = settings(), max = maxLevel(sch);
+  const list = students.filter(s => !onlyStudentId || s.id === onlyStudentId).map(st => {
+    const rec = records[st.id] || {}, stats = studentStats(st.id, lessons, rec, comps), fin = rec.fin || {};
+    const text = fin.textEdited ? (fin.text || '') : genComment(st, stats, sch, sem, fin).text;
+    return {
+      name: st.name, comment: text, baseline: stats.baseline, final: stats.final,
+      rows: lessons.map(l => { const e = rec.s?.[l.id] || {}; const sc = {}; comps.forEach(c => { if (typeof e[c.code] === 'number') sc[c.code] = e[c.code]; }); return { date: l.date, project: l.project, note: e.note || '', absent: !!e.absent, scores: sc }; }),
+    };
+  });
+  return {
+    title: set.title, semesterLabel: (sem.name + ' - NĂM HỌC ' + sem.year).toUpperCase(), semesterShort: sem.name,
+    schoolName: sch.name, className: cls.name, comps, maxLevel: max, totalLabel: set.totalLabel,
+    levels: Array.from({ length: max }, (_, i) => set.levels[i + 1]),
+    overview: set.overview, signerTitle: set.signerTitle, signerName: set.signerName,
+    contact: String(set.contact || '').split('\n').filter(Boolean), images: IMAGES, students: list,
+  };
+}
+const fileSafe = s => String(s || '').normalize('NFC').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
+async function saveFile(filename, buf) {
+  const msg = $('#exportMsg');
+  let dl = null; try { dl = await window.claude?.use?.('downloads'); } catch {}
+  if (dl) {
+    try { await dl.save({ filename, data: new Blob([buf]) }); if (msg) msg.textContent = 'Đã lưu ' + filename; return; }
+    catch (e) { if (e?.code === 'declined') { if (msg) msg.textContent = 'Đã hủy lưu file.'; return; } if (msg) msg.textContent = 'Không lưu được file (' + (e?.code || 'lỗi') + ').'; return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  if (msg) msg.textContent = 'Đã tạo ' + filename;
+}
+async function runExport(kind) {
+  const msg = $('#exportMsg');
+  if (!window.ExcelJS || !window.JSZip) { if (msg) msg.textContent = 'Chưa tải xong thư viện Excel. Đợi vài giây rồi thử lại.'; return; }
+  const sch = school(), sem = semester();
+  try {
+    if (kind === 'school') {
+      const classes = S.classes.filter(c => c.schoolId === sch.id && c.semesterId === sem.id);
+      for (const cls of classes) {
+        if (msg) msg.textContent = 'Đang tạo file lớp ' + cls.name + '…';
+        const [students, lessons, recs] = await Promise.all([Store.list('students', 'classId', cls.id), Store.list('lessons', 'classId', cls.id), Store.list('records', 'classId', cls.id)]);
+        students.sort(byOrder); lessons.sort((a, b) => a.order - b.order);
+        const records = Object.fromEntries(recs.map(r => [r.studentId, r]));
+        const buf = await ArkkiExport.build(exportData(cls, sch, sem, students, lessons, records));
+        await saveFile('Arkki_' + fileSafe(sch.name) + '_' + fileSafe(sem.name) + '_' + fileSafe(sem.year) + '_' + fileSafe(cls.name) + '.xlsx', buf);
+      }
+      return;
+    }
+    if (msg) msg.textContent = 'Đang tạo file…';
+    const cls = klass();
+    const one = kind === 'one' ? S.sel.student : null;
+    const buf = await ArkkiExport.build(exportData(cls, sch, sem, S.students, S.lessons, S.records, one));
+    const stName = one ? '_' + fileSafe(S.students.find(s => s.id === one)?.name) : '';
+    await saveFile('Arkki_' + fileSafe(sch.name) + '_' + fileSafe(sem.name) + '_' + fileSafe(sem.year) + '_' + fileSafe(cls.name) + stName + '.xlsx', buf);
+  } catch (e) { console.error(e); if (msg) msg.textContent = 'Xuất file lỗi: ' + (e?.message || e); }
+}
+
+// ---------- view: Danh mục ----------
+function viewDanhMuc() {
+  const tabs = [['hocky', 'Năm học & học kỳ'], ['truong', 'Trường & tiêu chí'], ['lop', 'Lớp'], ['hocsinh', 'Học sinh'], ['baihoc', 'Bài học']].concat(Store.mode === 'supabase' ? [['giaovien', 'Giáo viên & phân công']] : []);
+  if (!tabs.some(t => t[0] === S.sel.catTab)) S.sel.catTab = 'hocsinh';
+  const sub = '<div class="subtabs">' + tabs.map(([k, l]) => '<button data-act="catTab" data-k="' + k + '" aria-pressed="' + (S.sel.catTab === k) + '">' + l + '</button>').join('') + '</div>';
+  const body = { hocky: catHocKy, truong: catTruong, lop: catLop, hocsinh: catHocSinh, baihoc: catBaiHoc, giaovien: catGiaoVien }[S.sel.catTab]();
+  return '<section class="panel" style="display:grid;gap:14px"><div class="row"><h2 class="grow">Danh mục</h2>' + (S.canWrite ? '' : '<span class="pill warn">Chỉ xem</span>') + '</div>' + sub + '</section>' + body;
+}
+function catHocKy() {
+  const rows = S.semesters.map(s => '<tr><td><input type="text" id="sem-y-' + s.id + '" data-act="semField" data-id="' + s.id + '" data-k="year" value="' + esc(s.year) + '"></td><td><input type="text" id="sem-n-' + s.id + '" data-act="semField" data-id="' + s.id + '" data-k="name" value="' + esc(s.name) + '"></td>' +
+    '<td class="small muted">' + S.classes.filter(c => c.semesterId === s.id).length + ' lớp</td><td><button class="btn danger" data-act="delSem" data-id="' + s.id + '">Xóa</button></td></tr>').join('');
+  return '<section class="panel edit" style="display:grid;gap:12px"><h3>Năm học và học kỳ</h3>' +
+    (S.semesters.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Năm học</th><th>Học kỳ</th><th></th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Chưa có học kỳ</b>Thêm học kỳ đầu tiên ở dưới.</div>') +
+    '<div class="row"><input type="text" id="newSemYear" placeholder="Năm học, ví dụ 2026-2027" style="max-width:220px"><input type="text" id="newSemName" placeholder="Học kỳ, ví dụ Học kỳ I" style="max-width:220px"><button class="btn pri" data-act="addSem">Thêm học kỳ</button></div>' +
+    '<p class="muted small" style="margin:0">Tên học kỳ được in lên báo cáo, ví dụ "HỌC KỲ II - NĂM HỌC 2025-2026". Xóa học kỳ chỉ được khi không còn lớp.</p></section>';
+}
+function catTruong() {
+  if (!S.schools.find(s => s.id === S.sel.catSchool)) S.sel.catSchool = S.sel.school || S.schools[0]?.id || '';
+  const sc = S.schools.find(s => s.id === S.sel.catSchool);
+  const list = S.schools.map(s => '<button class="item" data-act="catSchool" data-id="' + s.id + '" aria-current="' + (s.id === S.sel.catSchool) + '"><span>' + esc(s.name) + '</span><span class="muted small">' + maxLevel(s) + ' cấp</span></button>').join('');
+  let detail = '<div class="empty"><b>Chưa chọn trường</b>Thêm trường ở cột bên trái.</div>';
+  if (sc) {
+    const max = maxLevel(sc), comps = activeComps(sc);
+    const rub = '<div class="rub"><table><thead><tr><th>Tiêu chí</th>' + Array.from({ length: max }, (_, i) => '<th>Cấp ' + (i + 1) + ' – ' + esc(settings().levels[i + 1].name) + '</th>').join('') + '</tr></thead><tbody>' +
+      comps.map(c => '<tr><th>' + esc(c.name) + '</th>' + Array.from({ length: max }, (_, i) => { const t = rubricText(sc, c.code, i + 1); return '<td class="' + (t ? '' : 'missing') + '"><textarea data-act="rubric" data-c="' + c.code + '" data-l="' + (i + 1) + '" id="rub-' + sc.id + c.code + (i + 1) + '" placeholder="Chưa có mô tả">' + esc(t) + '</textarea></td>'; }).join('') + '</tr>').join('') +
+      '</tbody></table></div>';
+    const libText = (sc.library || []).map(x => [COMP_NAME[x.comp] || '', x.level || '', x.lesson || '', x.text].join(' | ')).join('\n');
+    detail = '<section class="panel" style="display:grid;gap:14px">' +
+      '<div class="grid2"><label class="field"><span>Tên trường (in trên báo cáo)</span><input type="text" id="sch-name-' + sc.id + '" data-act="schField" data-k="name" value="' + esc(sc.name) + '"></label>' +
+      '<label class="field"><span>Số cấp độ đánh giá</span><select id="sch-max-' + sc.id + '" data-act="schField" data-k="maxLevel"><option value="3"' + (max === 3 ? ' selected' : '') + '>3 cấp (Bắt đầu, Cơ bản, Nâng cao)</option><option value="4"' + (max === 4 ? ' selected' : '') + '>4 cấp (thêm Thành thạo)</option></select></label></div>' +
+      '<div class="field"><span>Tiêu chí dùng cho trường này</span><div class="row">' + COMPS.map(c => '<label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="schComp" data-c="' + c.code + '"' + ((sc.comps?.length ? sc.comps.includes(c.code) : true) ? ' checked' : '') + '> ' + esc(c.name) + '</label>').join('') + '</div></div>' +
+      '<div class="field"><span>Mô tả từng cấp độ (dùng để tạo nhận xét cuối kỳ)</span>' + rub + '</div>' +
+      '<details><summary>Thư viện câu gợi ý cho nhận xét hằng ngày (' + (sc.library || []).length + ' câu)</summary><p class="muted small">Mỗi dòng: Tiêu chí | Cấp | Dự án (để trống = mọi dự án) | Câu nhận xét. Câu gợi ý hiện dưới ô nhận xét theo đúng cấp học sinh vừa được chấm.</p>' +
+      '<textarea id="lib-' + sc.id + '" data-act="library" rows="8" style="font-size:12.5px">' + esc(libText) + '</textarea></details>' +
+      '<div class="row"><span class="grow muted small">' + S.classes.filter(c => c.schoolId === sc.id).length + ' lớp thuộc trường này</span><button class="btn danger" data-act="delSchool" data-id="' + sc.id + '">Xóa trường</button></div></section>';
+  }
+  return '<div class="cat"><section class="panel" style="display:grid;gap:10px"><h3>Trường</h3><div class="list">' + (list || '<span class="muted small">Chưa có trường</span>') + '</div>' +
+    '<input type="text" id="newSchool" placeholder="Tên trường mới"><button class="btn pri" data-act="addSchool">Thêm trường</button></section>' + detail + '</div>';
+}
+function catLop() {
+  const sc = school(), sem = semester();
+  if (!sc || !sem) return '<div class="empty"><b>Cần có học kỳ và trường trước</b>Thêm ở các mục Năm học & học kỳ và Trường.</div>';
+  const cls = S.classes.filter(c => c.schoolId === sc.id && c.semesterId === sem.id);
+  const others = S.classes.filter(c => c.schoolId === sc.id && c.semesterId !== sem.id);
+  const rows = cls.map(c => '<tr><td><input type="text" id="cls-' + c.id + '" data-act="clsName" data-id="' + c.id + '" value="' + esc(c.name) + '"></td><td><button class="btn danger" data-act="delClass" data-id="' + c.id + '">Xóa lớp</button></td></tr>').join('');
+  return '<section class="panel edit" style="display:grid;gap:12px"><h3>Lớp của ' + esc(sc.name) + ' · ' + esc(sem.name) + ' ' + esc(sem.year) + '</h3>' +
+    (cls.length ? '<div style="overflow-x:auto"><table><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Chưa có lớp</b>Thêm lớp đầu tiên ở dưới.</div>') +
+    '<div class="row"><input type="text" id="newClass" placeholder="Tên lớp, ví dụ 6A1" style="max-width:240px"><button class="btn pri" data-act="addClass">Thêm lớp</button></div>' +
+    (others.length ? '<div class="row"><span class="small muted">Tạo lớp mới bằng cách chép học sinh từ lớp ở học kỳ khác:</span><select id="copyFrom" style="max-width:280px">' + others.map(c => { const s = S.semesters.find(x => x.id === c.semesterId); return '<option value="' + c.id + '">' + esc(c.name) + ' · ' + esc(s ? s.name + ' ' + s.year : '') + '</option>'; }).join('') + '</select><button class="btn" data-act="copyClass">Chép sang học kỳ này</button></div>' : '') +
+    '<p class="muted small" style="margin:0">Xóa lớp sẽ xóa luôn học sinh, bài học và điểm của lớp đó.</p></section>';
+}
+function catHocSinh() {
+  const nc = needClass(); if (nc) return nc;
+  const rows = S.students.map((st, i) => '<tr><td class="small muted">' + (i + 1) + '</td><td><input type="text" id="st-n-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="name" value="' + esc(st.name) + '"></td>' +
+    '<td><input type="text" id="st-c-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="code" value="' + esc(st.code || '') + '"></td>' +
+    '<td><input type="date" id="st-d-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="dob" value="' + esc(st.dob || '') + '"></td>' +
+    '<td><button class="btn danger" data-act="delStudent" data-id="' + st.id + '">Xóa</button></td></tr>').join('');
+  return '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">Học sinh lớp ' + esc(klass()?.name) + ' (' + S.students.length + ')</h3></div>' +
+    (S.students.length ? '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Họ và tên</th><th>Mã học sinh</th><th>Ngày sinh</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Lớp chưa có học sinh</b>Dán danh sách từ Excel hoặc tải file lên ở dưới.</div>') +
+    '</section><section class="panel" style="display:grid;gap:10px"><h3>Nhập danh sách</h3>' +
+    '<p class="muted small" style="margin:0">Dán từ Excel, mỗi dòng một học sinh, theo cột: <b>Họ và tên</b> | Ngày sinh | Mã học sinh. Cột STT ở đầu và dòng tiêu đề được bỏ qua tự động. Học sinh trùng tên với người đã có sẽ được cập nhật thay vì thêm mới.</p>' +
+    '<textarea id="pasteStudents" rows="6" placeholder="Nguyễn Văn An&#9;12/03/2014&#9;HS-001"></textarea>' +
+    '<div class="row"><button class="btn pri" data-act="importStudents">Thêm vào lớp</button><label class="btn">Tải file Excel…<input type="file" id="fileStudents" accept=".xlsx" hidden></label><span class="small muted" id="importMsg"></span></div></section>';
+}
+function catBaiHoc() {
+  const nc = needClass(); if (nc) return nc;
+  const rows = S.lessons.map((l, i) => '<tr><td class="small muted">B' + String(i + 1).padStart(2, '0') + '</td>' +
+    '<td><input type="date" id="ls-d-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="date" value="' + esc(l.date || '') + '"></td>' +
+    '<td><input type="text" id="ls-p-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="project" value="' + esc(l.project || '') + '"></td>' +
+    '<td><input type="text" id="ls-c-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="content" value="' + esc(l.content || '') + '"></td>' +
+    '<td><button class="btn danger" data-act="delLesson" data-id="' + l.id + '">Xóa</button></td></tr>').join('');
+  const sib = S.classes.filter(c => c.schoolId === S.sel.school && c.semesterId === S.sel.sem && c.id !== S.sel.cls);
+  return '<section class="panel edit" style="display:grid;gap:12px"><h3>Bài học của lớp ' + esc(klass()?.name) + ' · ' + esc(semester()?.name) + ' ' + esc(semester()?.year) + ' (' + S.lessons.length + ' buổi)</h3>' +
+    (S.lessons.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Buổi</th><th>Ngày</th><th>Dự án</th><th>Nội dung</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Chưa có bài học</b>Dán danh sách buổi học ở dưới.</div>') +
+    '<p class="muted small" style="margin:0">Buổi 1 luôn là mốc đánh giá đầu kỳ. Thứ tự buổi theo ngày học.</p></section>' +
+    '<section class="panel" style="display:grid;gap:10px"><h3>Nhập danh sách bài học</h3><p class="muted small" style="margin:0">Dán từ Excel theo cột: <b>Ngày</b> | <b>Dự án</b> | Nội dung. Ngày dạng 06/01/2026.</p>' +
+    '<textarea id="pasteLessons" rows="6" placeholder="06/01/2026&#9;Nhà rắn (Serpent House)&#9;Nhận biết hình khối 3D"></textarea>' +
+    '<div class="row"><button class="btn pri" data-act="importLessons">Thêm buổi học</button><button class="btn" data-act="addLesson">Thêm 1 buổi trống</button><span class="small muted" id="importMsg"></span></div>' +
+    (sib.length && S.lessons.length ? '<div class="row"><span class="small muted">Áp dụng danh sách này cho lớp khác (thay thế bài học chưa có điểm):</span>' + sib.map(c => '<label class="chk" style="color:var(--ink)"><input type="checkbox" class="copyTo" value="' + c.id + '"> ' + esc(c.name) + '</label>').join('') + '<button class="btn" data-act="copyLessons">Sao chép</button></div>' : '') + '</section>';
+}
+
+// ---------- Giáo viên & phân công (Supabase only) ----------
+const Staff = { loaded: false, loading: false, profiles: [], links: [], err: '' };
+async function loadStaff() {
+  if (Staff.loading) return; Staff.loading = true;
+  try {
+    const [p, l] = await Promise.all([Store.sb.from('profiles').select('*').order('created_at'), Store.sb.from('class_teachers').select('*')]);
+    if (p.error || l.error) throw (p.error || l.error);
+    Staff.profiles = p.data; Staff.links = l.data; Staff.err = ''; Staff.loaded = true;
+  } catch (e) { Staff.err = e.message || String(e); }
+  Staff.loading = false; render();
+}
+function catGiaoVien() {
+  if (!Staff.loaded && !Staff.loading) loadStaff();
+  if (!Staff.loaded) return '<div class="empty"><b>' + (Staff.err ? 'Không tải được danh sách giáo viên' : 'Đang tải danh sách giáo viên…') + '</b>' + esc(Staff.err) + '</div>';
+  const sem = semester();
+  const cls = S.classes.filter(c => c.semesterId === S.sel.sem);
+  const schName = id => S.schools.find(x => x.id === id)?.name || '';
+  const rows = Staff.profiles.map(p => {
+    const mine = new Set(Staff.links.filter(l => l.user_id === p.id).map(l => l.class_id));
+    const roleSel = '<select id="role-' + p.id + '" data-act="setRole" data-id="' + p.id + '"' + (isAdmin() && p.id !== S.me?.id ? '' : ' disabled') + '>' +
+      Object.entries(ROLE_LABEL).map(([k, v]) => '<option value="' + k + '"' + (p.role === k ? ' selected' : '') + '>' + v + '</option>').join('') + '</select>';
+    const chips = p.role === 'teacher' ? (cls.length ? cls.map(c => '<label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="assign" data-user="' + p.id + '" data-cls="' + c.id + '"' + (mine.has(c.id) ? ' checked' : '') + '> ' + esc(c.name) + ' <span class="muted small">' + esc(schName(c.schoolId)) + '</span></label>').join(' ') : '<span class="muted small">Học kỳ này chưa có lớp</span>') : '<span class="muted small">Thấy tất cả các lớp</span>';
+    return '<tr><td><b>' + esc(p.full_name || '(chưa có tên)') + '</b><div class="muted small">' + esc(p.email || '') + '</div></td><td>' + roleSel + '</td>' +
+      '<td><label class="chk"><input type="checkbox" data-act="setActive" data-id="' + p.id + '"' + (p.active ? ' checked' : '') + (isAdmin() && p.id !== S.me?.id ? '' : ' disabled') + '> Đang hoạt động</label></td><td><div class="row">' + chips + '</div></td></tr>';
+  }).join('');
+  return '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">Giáo viên và phân công lớp · ' + esc(sem ? sem.name + ' ' + sem.year : '') + '</h3><button class="btn" data-act="reloadStaff">Tải lại</button></div>' +
+    '<div style="overflow-x:auto"><table><thead><tr><th>Người dùng</th><th>Vai trò</th><th>Trạng thái</th><th>Lớp được phân công (học kỳ đang chọn)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<p class="muted small" style="margin:0">Giáo viên tự tạo tài khoản ở màn hình đăng nhập bằng email của mình, sau đó xuất hiện ở đây với vai trò Giáo viên. Giáo viên chỉ thấy và chấm các lớp được tích. Chỉ Quản trị mới đổi được vai trò. Tắt "Đang hoạt động" để khóa tài khoản người đã nghỉ.</p></section>';
+}
+
+// ---------- view: Cài đặt ----------
+function viewCaiDat() {
+  const s = settings();
+  const f = (k, label, rows) => '<label class="field"><span>' + label + '</span>' + (rows ? '<textarea id="set-' + k + '" data-auto data-act="setField" data-k="' + k + '" rows="' + rows + '">' + esc(s[k]) + '</textarea>' : '<input type="text" id="set-' + k + '" data-act="setField" data-k="' + k + '" value="' + esc(s[k]) + '">') + '</label>';
+  return '<section class="panel" style="display:grid;gap:14px"><h2>Cài đặt mẫu in</h2><p class="muted small" style="margin:0">Áp dụng cho mọi trường khi xuất Excel.</p>' +
+    '<div class="grid2">' + f('title', 'Tiêu đề báo cáo', 2) + f('totalLabel', 'Nhãn dòng điểm cuối kỳ') + f('signerTitle', 'Chức danh người ký') + f('signerName', 'Tên người ký') + '</div>' +
+    f('commentTpl', 'Mẫu nhận xét cuối kỳ. Các mã được thay tự động: [HOC_KY], [HO_TEN_HOC_SINH], [TIEUCHI_CHENHLECH], [CAPDO_CAONHAT], [CAPDO_THAPNHAT], [GIAOVIEN_NHANXET], [GIAOVIEN_GIUPDO]', 12) +
+    f('overview', 'Tổng quan về cách đánh giá', 6) + f('contact', 'Thông tin liên hệ (mỗi dòng một mục)', 4) +
+    '<div class="field"><span>Tên và biểu hiện của các cấp độ (bảng chú thích cuối báo cáo)</span><div class="rub"><table><tbody>' +
+    [1, 2, 3, 4].map(l => '<tr><th style="width:60px">Cấp ' + l + '</th><td style="width:180px"><textarea id="lv-n-' + l + '" data-act="lvField" data-l="' + l + '" data-k="name" style="min-height:36px">' + esc(s.levels[l].name) + '</textarea></td><td><textarea id="lv-d-' + l + '" data-act="lvField" data-l="' + l + '" data-k="desc" style="min-height:36px">' + esc(s.levels[l].desc) + '</textarea></td></tr>').join('') +
+    '</tbody></table></div></div></section>' +
+    '<section class="panel" style="display:grid;gap:10px"><h2>Sao lưu và khôi phục</h2><p class="muted small" style="margin:0">Tải toàn bộ dữ liệu (học kỳ, trường, lớp, học sinh, bài học, điểm, nhận xét, cài đặt) về một file JSON. File này cũng dùng để chuyển dữ liệu sang hệ thống khác.</p>' +
+    '<div class="row"><button class="btn pri" data-act="backup">Tải file sao lưu</button>' + (isAdmin() ? '<label class="btn">Khôi phục từ file…<input type="file" id="restoreFile" accept=".json" hidden></label>' : '') + '<span class="small muted" id="backupMsg"></span></div>' +
+    (isAdmin() ? '<p class="muted small" style="margin:0">Khôi phục sẽ thêm mới hoặc ghi đè các mục có cùng mã, không xóa mục đang có.</p>' : '') + '</section>';
+}
+
+// ---------- actions ----------
+const armed = new Set();
+function confirmTwice(btn, key) {
+  if (armed.has(key)) { armed.delete(key); return true; }
+  armed.add(key); btn.classList.add('arm'); btn.textContent = 'Bấm lần nữa để xóa';
+  setTimeout(() => { armed.delete(key); if (btn.isConnected) { btn.classList.remove('arm'); btn.textContent = 'Xóa'; } }, 4000);
+  return false;
+}
+async function delWhere(coll, field, value) { for (const r of await Store.list(coll, field, value)) await Store.del(coll, r.id); }
+function saveSettings(patch) { const next = { ...settings(), ...patch }; S.settings = next; return write(() => Store.set('settings', 'main', next)); }
+function updSchool(patch) { const sc = S.schools.find(s => s.id === S.sel.catSchool); Object.assign(sc, patch); return write(() => Store.update('schools', sc.id, patch)); }
+
+$('#view').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const act = b.dataset.act;
+  if (b.tagName === 'INPUT' || b.tagName === 'TEXTAREA' || b.tagName === 'SELECT') return;
+  if (act === 'lesson') { S.sel.lesson = b.dataset.id; saveSel(); render(true); }
+  else if (act === 'prevLesson' || act === 'nextLesson') { const i = S.lessons.findIndex(l => l.id === S.sel.lesson) + (act === 'nextLesson' ? 1 : -1); if (S.lessons[i]) { S.sel.lesson = S.lessons[i].id; saveSel(); render(true); } }
+  else if (act === 'score') {
+    const st = b.dataset.st, c = b.dataset.c, v = Number(b.dataset.v);
+    const cur = S.records[st]?.s?.[S.sel.lesson]?.[c];
+    const patch = { s: { [S.sel.lesson]: { [c]: cur === v ? null : v } } };
+    patchRecord(st, patch).catch(() => {}); render(true);
+  }
+  else if (act === 'sugg') {
+    const st = b.dataset.st, t = b.textContent.replace(/^\+\s*/, '');
+    const cur = S.records[st]?.s?.[S.sel.lesson]?.note || '';
+    queueNote(st, { s: { [S.sel.lesson]: { note: (cur ? cur.trim() + ' ' : '') + t } } }); flushNote(st); render(true);
+  }
+  else if (act === 'pickStudent') { S.sel.student = b.dataset.id; saveSel(); render(true); }
+  else if (act === 'prevStudent' || act === 'nextStudent') { const i = S.students.findIndex(s => s.id === S.sel.student) + (act === 'nextStudent' ? 1 : -1); if (S.students[i]) { S.sel.student = S.students[i].id; saveSel(); render(true); } }
+  else if (act === 'resetText') { patchRecord(S.sel.student, { fin: { textEdited: false, text: '' } }).catch(() => {}); render(true); }
+  else if (act === 'reloadStaff') { Staff.loaded = false; render(true); }
+  else if (act === 'backup') runBackup();
+  else if (act === 'exportClass') runExport('class');
+  else if (act === 'exportOne') runExport('one');
+  else if (act === 'exportSchool') runExport('school');
+  else if (act === 'catTab') { S.sel.catTab = b.dataset.k; saveSel(); render(true); }
+  else if (act === 'catSchool') { S.sel.catSchool = b.dataset.id; render(true); }
+  else if (act === 'addSem') {
+    const year = $('#newSemYear').value.trim(), name = $('#newSemName').value.trim(); if (!year || !name) return;
+    const id = uid(); await write(() => Store.set('semesters', id, { year, name })); S.sel.sem = id; saveSel();
+  }
+  else if (act === 'delSem') {
+    if (S.classes.some(c => c.semesterId === b.dataset.id)) { b.textContent = 'Còn lớp, chưa xóa được'; return; }
+    if (confirmTwice(b, 'sem' + b.dataset.id)) await write(() => Store.del('semesters', b.dataset.id));
+  }
+  else if (act === 'addSchool') {
+    const name = $('#newSchool').value.trim(); if (!name) return;
+    const id = uid(); await write(() => Store.set('schools', id, { name, maxLevel: 3, comps: COMPS.map(c => c.code), rubric: JSON.parse(JSON.stringify(DEFAULT_RUBRIC)), library: [] }));
+    S.sel.catSchool = id; if (!S.sel.school) S.sel.school = id; saveSel();
+  }
+  else if (act === 'delSchool') {
+    if (S.classes.some(c => c.schoolId === b.dataset.id)) { b.textContent = 'Còn lớp, chưa xóa được'; return; }
+    if (confirmTwice(b, 'sch' + b.dataset.id)) await write(() => Store.del('schools', b.dataset.id));
+  }
+  else if (act === 'addClass') {
+    const name = $('#newClass').value.trim(); if (!name) return;
+    const id = uid(); await write(() => Store.set('classes', id, { name, schoolId: S.sel.school, semesterId: S.sel.sem })); S.sel.cls = id; saveSel(); fixSel();
+  }
+  else if (act === 'delClass') {
+    if (!confirmTwice(b, 'cls' + b.dataset.id)) return;
+    const id = b.dataset.id;
+    await write(async () => { await delWhere('records', 'classId', id); await delWhere('students', 'classId', id); await delWhere('lessons', 'classId', id); await Store.del('classes', id); });
+  }
+  else if (act === 'copyClass') {
+    const src = S.classes.find(c => c.id === $('#copyFrom').value); if (!src) return;
+    const id = uid();
+    await write(async () => {
+      await Store.set('classes', id, { name: src.name, schoolId: S.sel.school, semesterId: S.sel.sem });
+      const sts = (await Store.list('students', 'classId', src.id)).sort(byOrder);
+      for (const [i, st] of sts.entries()) { const nid = uid(); await Store.set('students', nid, { classId: id, name: st.name, code: st.code || '', dob: st.dob || '', order: i + 1, personId: st.personId || st.id }); }
+    });
+    S.sel.cls = id; saveSel(); fixSel();
+  }
+  else if (act === 'delStudent') {
+    if (!confirmTwice(b, 'st' + b.dataset.id)) return;
+    const id = b.dataset.id;
+    await write(async () => { await Store.del('records', recId(S.sel.cls, id)); await Store.del('students', id); });
+  }
+  else if (act === 'importStudents') importStudents($('#pasteStudents').value);
+  else if (act === 'importLessons') importLessons($('#pasteLessons').value);
+  else if (act === 'addLesson') { const id = uid(); await write(() => Store.set('lessons', id, { classId: S.sel.cls, order: S.lessons.length + 1, date: '', project: '', content: '' })); }
+  else if (act === 'delLesson') { if (confirmTwice(b, 'ls' + b.dataset.id)) await write(() => Store.del('lessons', b.dataset.id)); }
+  else if (act === 'copyLessons') {
+    const targets = [...document.querySelectorAll('.copyTo:checked')].map(x => x.value);
+    const msg = $('#importMsg');
+    for (const t of targets) {
+      const [old, recs] = await Promise.all([Store.list('lessons', 'classId', t), Store.list('records', 'classId', t)]);
+      const used = new Set(recs.flatMap(r => Object.keys(r.s || {})));
+      await write(async () => {
+        for (const l of old) if (!used.has(l.id)) await Store.del('lessons', l.id);
+        const kept = old.filter(l => used.has(l.id));
+        for (const l of S.lessons) if (!kept.some(k => k.date === l.date && k.project === l.project)) await Store.set('lessons', uid(), { classId: t, order: l.order, date: l.date, project: l.project, content: l.content || '' });
+      });
+    }
+    if (msg) msg.textContent = 'Đã sao chép cho ' + targets.length + ' lớp.';
+  }
+});
+
+$('#view').addEventListener('change', async e => {
+  const t = e.target, act = t.dataset.act;
+  if (act === 'absent') { patchRecord(t.dataset.st, { s: { [S.sel.lesson]: { absent: t.checked } } }).catch(() => {}); render(true); }
+  else if (act === 'semField') write(() => Store.update('semesters', t.dataset.id, { [t.dataset.k]: t.value.trim() }));
+  else if (act === 'clsName') write(() => Store.update('classes', t.dataset.id, { name: t.value.trim() }));
+  else if (act === 'schField') updSchool({ [t.dataset.k]: t.dataset.k === 'maxLevel' ? Number(t.value) : t.value.trim() }).then(() => render(true));
+  else if (act === 'schComp') { const comps = [...document.querySelectorAll('[data-act=schComp]:checked')].map(x => x.dataset.c); if (!comps.length) { t.checked = true; return; } updSchool({ comps }); }
+  else if (act === 'rubric') { const sc = S.schools.find(s => s.id === S.sel.catSchool); const rubric = JSON.parse(JSON.stringify(sc.rubric || {})); (rubric[t.dataset.c] ||= {})[t.dataset.l] = t.value.trim(); updSchool({ rubric }); }
+  else if (act === 'library') {
+    const byName = Object.fromEntries(COMPS.map(c => [c.name.toLowerCase(), c.code]));
+    const library = t.value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(p => p.length >= 2 && p[p.length - 1])
+      .map(p => p.length >= 4 ? { comp: byName[p[0].toLowerCase()] || '', level: Number(String(p[1]).replace(/\D/g, '')) || '', lesson: p[2], text: p.slice(3).join(' | ') } : { comp: '', level: '', lesson: '', text: p[p.length - 1] });
+    updSchool({ library });
+  }
+  else if (act === 'stField') { const v = t.dataset.k === 'name' ? t.value.trim() : t.value; if (t.dataset.k === 'name' && !v) return; write(() => Store.update('students', t.dataset.id, { [t.dataset.k]: v })); }
+  else if (act === 'lsField') write(() => Store.update('lessons', t.dataset.id, { [t.dataset.k]: t.value })).then(() => { if (t.dataset.k === 'date') reorderLessons(); });
+  else if (act === 'setField') saveSettings({ [t.dataset.k]: t.value });
+  else if (act === 'lvField') { const levels = JSON.parse(JSON.stringify(settings().levels)); levels[t.dataset.l][t.dataset.k] = t.value.trim(); saveSettings({ levels }); }
+  else if (t.id === 'fileStudents' && t.files[0]) importStudentsFile(t.files[0]);
+  else if (t.id === 'restoreFile' && t.files[0]) runRestore(t.files[0]);
+  else if (act === 'setRole' || act === 'setActive') {
+    const patch = act === 'setRole' ? { role: t.value } : { active: t.checked };
+    const r = await Store.sb.from('profiles').update(patch).eq('id', t.dataset.id);
+    if (r.error) setSave('err', 'Không đổi được: ' + r.error.message); else { Object.assign(Staff.profiles.find(x => x.id === t.dataset.id), patch); setSave('', 'Đã lưu'); render(true); }
+  }
+  else if (act === 'assign') {
+    const row = { class_id: t.dataset.cls, user_id: t.dataset.user };
+    const r = t.checked ? await Store.sb.from('class_teachers').upsert(row) : await Store.sb.from('class_teachers').delete().match(row);
+    if (r.error) { setSave('err', 'Không phân công được: ' + r.error.message); t.checked = !t.checked; }
+    else { Staff.links = t.checked ? Staff.links.concat([row]) : Staff.links.filter(l => !(l.class_id === row.class_id && l.user_id === row.user_id)); setSave('', 'Đã lưu'); }
+  }
+});
+$('#view').addEventListener('input', e => {
+  const t = e.target, act = t.dataset.act;
+  if (t.matches('textarea[data-auto]')) autosize(t);
+  if (act === 'note') queueNote(t.dataset.st, { s: { [S.sel.lesson]: { note: t.value } } });
+  else if (act === 'fin') { queueNote(S.sel.student, { fin: { [t.dataset.k]: t.value } }); refreshFinalPreview(); }
+  else if (act === 'finalText') queueNote(S.sel.student, { fin: { text: t.value, textEdited: true } });
+});
+$('#view').addEventListener('focusout', e => {
+  const act = e.target.dataset?.act;
+  if (act === 'note') flushNote(e.target.dataset.st);
+  if (act === 'fin' || act === 'finalText') flushNote(S.sel.student);
+});
+function refreshFinalPreview() {
+  const st = S.students.find(s => s.id === S.sel.student), fin = S.records[st.id]?.fin || {};
+  if (fin.textEdited) return;
+  const ta = $('#final-' + st.id); if (!ta) return;
+  const sc = school(); ta.value = genComment(st, studentStats(st.id, S.lessons, S.records[st.id], activeComps(sc)), sc, semester(), fin).text; autosize(ta);
+}
+async function reorderLessons() {
+  const sorted = [...S.lessons].sort((a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')));
+  for (const [i, l] of sorted.entries()) if (l.order !== i + 1) await write(() => Store.update('lessons', l.id, { order: i + 1 }));
+}
+
+// ---------- import ----------
+function rowsFromPaste(text) { return text.split(/\r?\n/).map(l => l.split('\t').map(x => x.trim())).filter(r => r.some(Boolean)); }
+async function addStudents(list) {
+  const msg = $('#importMsg');
+  const norm = s => s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+  const existing = new Map(S.students.map(s => [norm(s.name), s]));
+  let added = 0, updated = 0, order = S.students.length;
+  await write(async () => {
+    for (const r of list) {
+      if (!r.name) continue;
+      const ex = existing.get(norm(r.name));
+      if (ex) { const p = {}; if (r.dob && r.dob !== ex.dob) p.dob = r.dob; if (r.code && r.code !== ex.code) p.code = r.code; if (Object.keys(p).length) { await Store.update('students', ex.id, p); updated++; } continue; }
+      const id = uid();
+      await Store.set('students', id, { classId: S.sel.cls, name: r.name.normalize('NFC'), dob: r.dob || '', code: r.code || '', order: ++order });
+      await Store.set('records', recId(S.sel.cls, id), { classId: S.sel.cls, studentId: id, s: {}, fin: {} });
+      existing.set(norm(r.name), { id, name: r.name }); added++;
+    }
+  });
+  if (msg) msg.textContent = 'Đã thêm ' + added + ' học sinh' + (updated ? ', cập nhật ' + updated : '') + '.';
+  const ta = $('#pasteStudents'); if (ta && added + updated) ta.value = '';
+}
+function parseStudentRow(cells) {
+  cells = cells.map(c => c == null ? '' : (c instanceof Date ? c : String(c).trim()));
+  if (cells.length > 1 && /^\d{1,3}$/.test(cells[0])) cells = cells.slice(1);
+  const isCode = c => typeof c === 'string' && !/\s/.test(c) && /\d/.test(c) && /[A-Za-z]/.test(c);
+  const name = cells.find(c => typeof c === 'string' && /\p{L}/u.test(c) && !/\d/.test(c)) || '';
+  if (/họ.*tên|^tên/i.test(name)) return null;
+  const dobCell = cells.find(c => c instanceof Date || (typeof c === 'string' && !isCode(c) && parseDate(c)));
+  const code = cells.find(isCode) || '';
+  return { name, dob: dobCell ? parseDate(dobCell) : '', code };
+}
+function importStudents(text) { addStudents(rowsFromPaste(text).map(parseStudentRow).filter(Boolean)); }
+async function importStudentsFile(file) {
+  const msg = $('#importMsg');
+  try {
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.worksheets[0]; const out = [];
+    ws.eachRow(row => { const vals = (row.values || []).slice(1).map(v => v && typeof v === 'object' && !(v instanceof Date) ? (v.text ?? v.result ?? '') : v); const r = parseStudentRow(vals); if (r && r.name) out.push(r); });
+    await addStudents(out);
+  } catch (e) { if (msg) msg.textContent = 'Không đọc được file: ' + (e?.message || e); }
+}
+async function importLessons(text) {
+  const msg = $('#importMsg');
+  const list = rowsFromPaste(text).map(c => { if (c.length > 1 && /^(B?\d{1,2})$/i.test(c[0]) && parseDate(c[1])) c = c.slice(1); return { date: parseDate(c[0]), project: c[1] || '', content: c[2] || '' }; }).filter(r => r.date || r.project);
+  if (!list.length) { if (msg) msg.textContent = 'Không đọc được dòng nào. Kiểm tra cột Ngày | Dự án | Nội dung.'; return; }
+  const all = [...S.lessons.map(l => ({ ...l })), ...list.map(l => ({ ...l, id: uid(), isNew: true }))].sort((a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')));
+  await write(async () => {
+    for (const [i, l] of all.entries()) {
+      if (l.isNew) await Store.set('lessons', l.id, { classId: S.sel.cls, order: i + 1, date: l.date, project: l.project, content: l.content });
+      else if (l.order !== i + 1) await Store.update('lessons', l.id, { order: i + 1 });
+    }
+  });
+  if (msg) msg.textContent = 'Đã thêm ' + list.length + ' buổi học.';
+  const ta = $('#pasteLessons'); if (ta) ta.value = '';
+}
+
+// ---------- backup / restore ----------
+const COLLS = ['semesters', 'schools', 'classes', 'students', 'lessons', 'records', 'settings'];
+async function runBackup() {
+  const msg = $('#backupMsg');
+  try {
+    if (msg) msg.textContent = 'Đang tải dữ liệu…';
+    const out = { app: 'arkki-danh-gia', exportedAt: new Date().toISOString() };
+    for (const c of COLLS) { out[c] = {}; for (const r of await Store.list(c)) { const { id, ...rest } = r; out[c][id] = rest; } }
+    const name = 'Arkki_sao_luu_' + new Date().toISOString().slice(0, 10) + '.json';
+    let dl = null; try { dl = await window.claude?.use?.('downloads'); } catch {}
+    const data = JSON.stringify(out, null, 1);
+    if (dl) await dl.save({ filename: name, data });
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+    if (msg) msg.textContent = 'Đã tạo ' + name;
+  } catch (e) { if (msg) msg.textContent = 'Sao lưu lỗi: ' + (e?.message || e?.code || e); }
+}
+async function runRestore(file) {
+  const msg = $('#backupMsg');
+  try {
+    const data = JSON.parse(await file.text());
+    let n = 0;
+    await write(async () => {
+      for (const c of COLLS) for (const [id, doc] of Object.entries(data[c] || {})) {
+        await Store.set(c, id, doc); n++;
+        if (msg && n % 20 === 0) msg.textContent = 'Đã khôi phục ' + n + ' mục…';
+      }
+    });
+    if (msg) msg.textContent = 'Đã khôi phục ' + n + ' mục.';
+  } catch (e) { if (msg) msg.textContent = 'Khôi phục lỗi: ' + (e?.message || e); }
+}
+
+// ---------- sign-in (Supabase only) ----------
+function showAuth(kind, note) {
+  document.body.classList.add('locked');
+  $('#who').hidden = true;
+  const forms = {
+    login: '<h1>Đăng nhập</h1><p class="muted" style="margin:0">Dùng email và mật khẩu Arkki của bạn.</p><form id="authForm" data-kind="login"><input type="email" id="aEmail" placeholder="Email" required autocomplete="email"><input type="password" id="aPass" placeholder="Mật khẩu" required autocomplete="current-password"><button class="btn pri">Đăng nhập</button></form>' +
+      '<div class="row small"><button class="btn ghost" data-auth="signup">Tạo tài khoản giáo viên</button><button class="btn ghost" data-auth="forgot">Quên mật khẩu</button></div>',
+    signup: '<h1>Tạo tài khoản</h1><p class="muted" style="margin:0">Sau khi tạo, nhờ quản lý chuyên môn phân công lớp cho bạn.</p><form id="authForm" data-kind="signup"><input type="text" id="aName" placeholder="Họ và tên" required><input type="email" id="aEmail" placeholder="Email" required autocomplete="email"><input type="password" id="aPass" placeholder="Mật khẩu (ít nhất 8 ký tự)" minlength="8" required autocomplete="new-password"><button class="btn pri">Tạo tài khoản</button></form><button class="btn ghost" data-auth="login">← Quay lại đăng nhập</button>',
+    forgot: '<h1>Quên mật khẩu</h1><form id="authForm" data-kind="forgot"><input type="email" id="aEmail" placeholder="Email" required autocomplete="email"><button class="btn pri">Gửi email đặt lại mật khẩu</button></form><button class="btn ghost" data-auth="login">← Quay lại đăng nhập</button>',
+    reset: '<h1>Đặt mật khẩu mới</h1><form id="authForm" data-kind="reset"><input type="password" id="aPass" placeholder="Mật khẩu mới (ít nhất 8 ký tự)" minlength="8" required autocomplete="new-password"><button class="btn pri">Lưu mật khẩu</button></form>',
+  };
+  $('#view').innerHTML = '<section class="panel auth">' + forms[kind] + '<div class="err" id="authErr">' + esc(note || '') + '</div></section>';
+}
+const AUTH_ERR = m => /invalid login/i.test(m) ? 'Sai email hoặc mật khẩu.' : /not confirmed/i.test(m) ? 'Email chưa được xác nhận. Mở hộp thư và bấm link xác nhận.' : /already registered/i.test(m) ? 'Email này đã có tài khoản. Hãy đăng nhập.' : m;
+document.addEventListener('click', e => { const b = e.target.closest('[data-auth]'); if (b) showAuth(b.dataset.auth); });
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'authForm') return;
+  e.preventDefault();
+  const kind = e.target.dataset.kind, err = $('#authErr'), btn = e.target.querySelector('button');
+  const email = $('#aEmail')?.value.trim(), pass = $('#aPass')?.value;
+  btn.disabled = true; err.textContent = '';
+  const auth = Store.sb.auth;
+  let r;
+  if (kind === 'login') r = await auth.signInWithPassword({ email, password: pass });
+  else if (kind === 'signup') r = await auth.signUp({ email, password: pass, options: { data: { full_name: $('#aName').value.trim() }, emailRedirectTo: location.origin + location.pathname } });
+  else if (kind === 'forgot') r = await auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  else if (kind === 'reset') r = await auth.updateUser({ password: pass });
+  btn.disabled = false;
+  if (r.error) { err.textContent = AUTH_ERR(r.error.message); return; }
+  if (kind === 'signup' && !r.data.session) showAuth('login', 'Đã tạo tài khoản. Mở email để xác nhận, rồi đăng nhập.');
+  else if (kind === 'forgot') showAuth('login', 'Đã gửi email đặt lại mật khẩu. Kiểm tra hộp thư của bạn.');
+  else if (kind === 'reset') { history.replaceState(null, '', location.pathname); startApp(); }
+});
+let appStarted = false, starting = false;
+async function startApp() {
+  if (starting) return; starting = true;
+  try { await startAppInner(); } finally { starting = false; }
+}
+async function startAppInner() {
+  if (Store.mode === 'supabase') {
+    const { data } = await Store.sb.auth.getUser();
+    if (!data?.user) return showAuth('login');
+    const pr = await Store.sb.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+    if (pr.error || !pr.data) return showAuth('login', 'Không tải được hồ sơ người dùng. Thử lại sau ít phút.');
+    if (!pr.data.active) { await Store.sb.auth.signOut(); return showAuth('login', 'Tài khoản đã bị khóa. Liên hệ quản trị Arkki.'); }
+    S.me = { id: pr.data.id, email: pr.data.email, fullName: pr.data.full_name, role: pr.data.role };
+    document.body.classList.remove('locked');
+    const who = $('#who');
+    who.innerHTML = '<b title="' + esc(S.me.email) + '">' + esc(S.me.fullName || S.me.email) + '</b><span class="pill">' + esc(ROLE_LABEL[S.me.role]) + '</span><button class="btn ghost small" id="logout">Đăng xuất</button>';
+    who.hidden = false;
+    $('#logout').onclick = async () => { await Store.sb.auth.signOut(); location.reload(); };
+  }
+  if (appStarted) { renderCtx(); render(true); return; }
+  appStarted = true;
+  renderCtx(); render(true);
+  subscribeGlobal();
+}
+
+// ---------- boot ----------
+(async () => {
+  await Store.init();
+  if (Store.mode === 'supabase') {
+    let recovering = /type=recovery/.test(location.hash);
+    Store.sb.auth.onAuthStateChange(ev => {
+      if (ev === 'PASSWORD_RECOVERY') { recovering = true; showAuth('reset'); }
+      else if (ev === 'SIGNED_IN' && !recovering && !appStarted) startApp();
+      else if (ev === 'SIGNED_OUT') location.reload();
+    });
+    if (recovering) return showAuth('reset');
+    return startApp();
+  }
+  renderCtx(); render(true);
+  if (Store.mode === 'db') {
+    try { const u = await window.claude.use('user'); const can = u?.can ? await u.can('data.write') : null; if (can === false) { S.canWrite = false; setSave('err', 'Bạn chỉ có quyền xem.'); } } catch {}
+  } else setSave('', 'Chế độ thử: lưu trên máy này');
+  appStarted = true;
+  subscribeGlobal();
+})();
+})();
+</script>
