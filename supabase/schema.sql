@@ -54,6 +54,21 @@ create table if not exists public.students (
   created_at timestamptz not null default now()
 );
 create index if not exists students_class on public.students (class_id);
+-- Enrolment (added 2026-11-17): a transfer keeps the old row (status 'moved') and adds a row in the new class
+-- linked by moved_from / moved_to; person_id joins every enrolment of the same child.
+alter table public.students add column if not exists joined_at text;
+alter table public.students add column if not exists left_at text;
+alter table public.students add column if not exists status text;
+alter table public.students add column if not exists moved_from jsonb;
+alter table public.students add column if not exists moved_to jsonb;
+alter table public.students add column if not exists left_reason text not null default '';
+alter table public.students add column if not exists left_by jsonb;
+
+-- Trial-mode assignment fields (added 2026-11-17). The live app still grants access through class_teachers;
+-- before switching, decide whether RLS reads these columns or the trial data is copied into class_teachers.
+alter table public.classes add column if not exists teacher_ids jsonb not null default '[]'::jsonb;
+alter table public.classes add column if not exists temps jsonb not null default '[]'::jsonb;
+alter table public.classes add column if not exists assign_log jsonb not null default '[]'::jsonb;
 
 create table if not exists public.lessons (
   id text primary key,
@@ -65,6 +80,17 @@ create table if not exists public.lessons (
   created_at timestamptz not null default now()
 );
 create index if not exists lessons_class on public.lessons (class_id);
+-- Lesson states (added 2026-11-17): cancelled lessons never count; done = {by, at} when the teacher closes the lesson;
+-- locked = {by, at} on the baseline lesson; lock_log = [{act: lock|unlock, by, at, reason}].
+-- TODO before going live: only managers may change locked / lock_log / cancelled (enforce in RLS or a trigger).
+alter table public.lessons add column if not exists cancelled boolean not null default false;
+alter table public.lessons add column if not exists cancel_reason text not null default '';
+alter table public.lessons add column if not exists cancel_by jsonb;
+alter table public.lessons add column if not exists done jsonb;
+alter table public.lessons add column if not exists locked jsonb;
+alter table public.lessons add column if not exists lock_log jsonb not null default '[]'::jsonb;
+-- Link to a lesson of the library (settings row id 'library'); 'none' = explicitly not linked, '' = match by project name.
+alter table public.lessons add column if not exists lib_id text not null default '';
 
 -- One row per student per class: s = {lessonId: {C01..C05: 1-4, note, absent}}, fin = end-of-term fields.
 create table if not exists public.records (

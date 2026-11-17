@@ -50,7 +50,7 @@ button { cursor: pointer; }
 .brand b { font-family: var(--f-display); font-size: 1rem; white-space: nowrap; }
 .ctx { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 420px; }
 .ctx label { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; gap: 2px; flex: 1 1 130px; min-width: 0; }
-select, input[type=text], input[type=date], input[type=number], textarea {
+select, input[type=text], input[type=search], input[type=date], input[type=number], textarea {
   background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; width: 100%; min-width: 0; }
 select { font-weight: 600; }
 textarea { resize: vertical; line-height: 1.45; }
@@ -166,6 +166,51 @@ td.note textarea { min-height: 56px; min-width: 220px; }
 .rub textarea { min-height: 70px; border: 0; padding: 4px; background: transparent; }
 .rub td.missing { background: var(--warn-soft); }
 details summary { cursor: pointer; font-weight: 600; }
+
+/* attendance, progress, lesson states, report workflow */
+.att { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 6px 0 4px; }
+.att button { border: 0; background: var(--surface); padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.att button + button { border-left: 1px solid var(--line); }
+.att button[aria-pressed=true][data-v=present] { background: var(--leaf); color: var(--leaf-ink); }
+.att button[aria-pressed=true][data-v=absent] { background: var(--bad); color: #fff; }
+.att button[aria-pressed=true][data-v=unknown] { background: var(--ink); color: var(--paper); }
+.att button:disabled, .seg button:disabled { cursor: default; }
+.sheet tr.unk td { background: var(--sunk); }
+.sheet tr.unk .scores { opacity: .35; pointer-events: none; }
+.sheet td.name small.by { margin-top: 2px; }
+.progress { height: 6px; background: var(--sunk); border-radius: 6px; overflow: hidden; flex: 1 1 140px; max-width: 240px; }
+.progress i { display: block; height: 100%; background: var(--leaf); }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 12px; }
+.tools input[type=search] { max-width: 240px; }
+.lesson.cancelled { opacity: .55; }
+.lesson.cancelled b { text-decoration: line-through; }
+.lesson .lk { color: var(--base); font-weight: 600; }
+.who select { width: auto; padding: 4px 6px; font-size: 12.5px; }
+.pill.bad { background: var(--rose-soft); color: var(--bad); }
+.pill.blue { background: var(--sunk); color: var(--base); }
+.status-box { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; background: var(--sunk); }
+.ask { border-color: var(--rose); display: grid; gap: 10px; }
+.hist { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; padding-left: 18px; }
+textarea[readonly] { background: var(--sunk); color: var(--muted); }
+.rev td, .rev th { white-space: normal; }
+.radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+
+/* lesson library and comment pickers */
+.libmod { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.libmod > .row > button { border: 0; background: none; padding: 0; text-align: left; font-weight: 700; font-family: var(--f-display); }
+.libmod > .row > button[aria-current=true] { color: var(--leaf); }
+.list button.item.add { color: var(--muted); font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+.chips button[aria-pressed=true] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.picker { margin-top: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 6px; background: var(--sunk); }
+.picks { display: grid; gap: 4px; max-height: 340px; overflow: auto; }
+.pick { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; line-height: 1.45; }
+.pick small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+.pick.on { border-color: var(--leaf); background: var(--leaf-soft); }
+.cm td textarea { min-height: 40px; }
+.cm td select { width: auto; }
+.goal { white-space: pre-line; }
 @media (prefers-reduced-motion: no-preference) { .lesson .bar i { transition: width .3s ease; } }
 @media (max-width: 640px) {
   .sheet table, .sheet thead, .sheet tbody, .sheet tr, .sheet td { display: block; min-width: 0; }
@@ -174,6 +219,7 @@ details summary { cursor: pointer; font-weight: 600; }
   .sheet tr { border-bottom: 1px solid var(--line); padding: 8px 4px; }
   .sheet td { border: 0; padding: 4px 6px; }
   .sheet td.n { display: none; }
+  td.note { width: auto; }
   td.note textarea { min-width: 0; }
 }
 </style>
@@ -193,6 +239,7 @@ details summary { cursor: pointer; font-weight: 600; }
     <nav class="tabs" role="tablist" id="tabs">
       <button role="tab" data-tab="cham">Chấm điểm</button>
       <button role="tab" data-tab="tonghop">Tổng hợp &amp; nhận xét cuối kỳ</button>
+      <button role="tab" data-tab="duyet">Duyệt report</button>
       <button role="tab" data-tab="danhmuc">Danh mục</button>
       <button role="tab" data-tab="caidat">Cài đặt mẫu in</button>
     </nav>
@@ -354,15 +401,49 @@ const S = {
   semesters: [], schools: [], classes: [], settings: { ...DEFAULT_SETTINGS },
   students: [], lessons: [], records: {}, loadedClass: null,
   sel: Object.assign({ sem: '', school: '', cls: '', lesson: '', student: '', tab: 'cham', catTab: 'hocsinh', catSchool: '' }, lsGet('arkki-sel') || {}),
-  canWrite: true, pending: 0, saveErr: '',
+  canWrite: true, pending: 0, saveErr: '', me: null,
+  ui: { q: '', onlyTodo: false, expMode: 'approved', ask: null,
+    libQ: '', libMod: '', libCls: '', libComp: '', libLevel: '', libImport: null,
+    pick: '', pickComp: '', pickByScore: true, finPick: '', finAll: false },
+  library: null, staff: null, staffLoaded: false,
 };
 const saveSel = () => lsSet('arkki-sel', S.sel);
-// Without Supabase (trial / Claude artifact) everyone acts as staff.
-const isStaff = () => Store.mode !== 'supabase' || ['admin', 'manager'].includes(S.me?.role);
-const isAdmin = () => Store.mode !== 'supabase' || S.me?.role === 'admin';
+// Trial mode (browser storage) simulates one user so both roles can be tried on one machine.
+// The Claude artifact (shared db) has no sign-in: everyone acts as staff.
+const LOCAL_USERS = {
+  manager: { id: 'local-manager', fullName: 'Quản lý (dùng thử)', role: 'manager' },
+  teacher: { id: 'local-teacher', fullName: 'Giáo viên (dùng thử)', role: 'teacher' }, // only offered while no teacher account exists
+};
+const myRole = () => Store.mode === 'db' ? 'manager' : (S.me?.role || 'teacher');
+const isStaff = () => ['admin', 'manager'].includes(myRole());
+const isAdmin = () => Store.mode === 'supabase' ? S.me?.role === 'admin' : isStaff();
+const meName = () => Store.mode === 'db' ? 'Người dùng' : (S.me?.fullName || S.me?.email || 'Người dùng');
+const stamp = () => ({ by: meName(), at: new Date().toISOString() });
+const fmtWhen = iso => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }); };
+const fold = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
 const ROLE_LABEL = { admin: 'Quản trị', manager: 'Quản lý chuyên môn', teacher: 'Giáo viên' };
-const visSems = () => isStaff() ? S.semesters : S.semesters.filter(x => S.classes.some(c => c.semesterId === x.id));
-const visSchools = () => isStaff() ? S.schools : S.schools.filter(x => S.classes.some(c => c.schoolId === x.id && c.semesterId === S.sel.sem));
+// ---------- teacher accounts and class assignment ----------
+// Trial mode keeps accounts in settings/staff and assignments on each class: teacherIds = [main 1, main 2],
+// temps = [{id, teacherId, replacesId, from, to, reason, by, at}]. Supabase keeps using profiles + class_teachers (RLS).
+const staff = () => S.staff?.teachers || [];
+const teacherById = id => staff().find(t => t.id === id);
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fmtD = d => fmtDate(d).slice(0, 5);
+// A stand-in is valid from its first to its last day included, then expires by itself.
+const tempState = (t, day = todayStr()) => day < t.from ? 'future' : day > t.to ? 'expired' : 'active';
+// How a user reaches a class: 'main' (one of its two teachers), 'temp' (an active stand-in) or '' (no access).
+function accessOf(cls, userId) {
+  if (!cls || !userId) return '';
+  if ((cls.teacherIds || []).includes(userId)) return 'main';
+  return (cls.temps || []).some(t => t.teacherId === userId && tempState(t) === 'active') ? 'temp' : '';
+}
+const isTrialTeacher = () => Store.mode === 'local' && myRole() === 'teacher' && S.me?.id !== 'local-teacher';
+// Locking an account removes access at once; grades already entered stay.
+const meLocked = () => isTrialTeacher() && teacherById(S.me.id)?.active === false;
+// Classes the current user may open. Supabase filters on the server; staff and the generic trial teacher see every class.
+const visClasses = () => !isTrialTeacher() || isStaff() ? S.classes : meLocked() ? [] : S.classes.filter(c => accessOf(c, S.me.id));
+const visSems = () => isStaff() ? S.semesters : S.semesters.filter(x => visClasses().some(c => c.semesterId === x.id));
+const visSchools = () => isStaff() ? S.schools : S.schools.filter(x => visClasses().some(c => c.schoolId === x.id && c.semesterId === S.sel.sem));
 const school = () => S.schools.find(s => s.id === S.sel.school);
 const semester = () => S.semesters.find(s => s.id === S.sel.sem);
 const klass = () => S.classes.find(c => c.id === S.sel.cls);
@@ -370,6 +451,59 @@ const activeComps = sc => (sc?.comps?.length ? COMPS.filter(c => sc.comps.includ
 const maxLevel = sc => sc?.maxLevel === 4 ? 4 : 3;
 const settings = () => ({ ...DEFAULT_SETTINGS, ...S.settings, levels: { ...DEFAULT_SETTINGS.levels, ...(S.settings.levels || {}) } });
 const rubricText = (sc, code, lvl) => (sc?.rubric?.[code]?.[lvl] ?? '').trim();
+
+// ---------- lesson library (one document, settings/library): modules -> lessons -> comment sentences ----------
+// comment.kind: daily (per lesson), final (end-of-term teacher comment), suggest (development suggestion), quick (short line per criterion).
+const LIB_KIND = { daily: 'Nhận xét hằng ngày', final: 'Nhận xét cuối kỳ', suggest: 'Đề xuất phát triển', quick: 'Câu nhanh theo năng lực' };
+const lib = () => S.library || { modules: [], lessons: [], comments: [] };
+const libClone = () => JSON.parse(JSON.stringify(lib()));
+const libModules = () => [...lib().modules].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+const libLessonsOf = mid => lib().lessons.filter(l => l.moduleId === mid).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+const libComments = (kind, lessonId) => lib().comments.filter(c => c.kind === kind && (!lessonId || c.lessonId === lessonId));
+// "Lớp áp dụng" holds class names or their beginning: "6" fits 6A1 and 6A2, "Arkki" fits Arkki 1-3. Empty fits every class.
+const libFitsClass = (l, className) => {
+  const tags = (l.classes || []).map(fold).filter(Boolean);
+  if (!tags.length || !className) return true;
+  const c = fold(className); return tags.some(t => c === t || c.startsWith(t));
+};
+const parenOf = s => (String(s || '').match(/\(([^)]+)\)/) || [])[1] || '';
+// The library lesson of a class session: the explicit link, else a lesson with the same name (or the same name in brackets).
+function libLessonFor(buoi) {
+  if (!buoi || buoi.libId === 'none') return null;
+  const L = lib().lessons;
+  if (buoi.libId) return L.find(x => x.id === buoi.libId) || null;
+  const p = fold(buoi.project), pp = fold(parenOf(buoi.project));
+  if (!p) return null;
+  const hits = L.filter(x => { const n = fold(x.name), np = fold(parenOf(x.name)); return n === p || (np && (np === p || np === pp)) || (pp && n === pp); });
+  return hits.find(x => libFitsClass(x, klass()?.name)) || hits[0] || null;
+}
+function saveLibrary(next) { S.library = next; return write(() => Store.set('settings', 'library', next)); }
+const cmKey = c => [c.kind, c.lessonId || '', c.comp || '', c.level, fold(c.text)].join('|');
+// Merge another library into ours: modules by name, lessons by module + name, sentences by content. Nothing is deleted.
+function mergeLibrary(add) {
+  const next = libClone(), st = { modules: 0, lessons: 0, comments: 0, dup: 0 }, modMap = {}, lesMap = {};
+  for (const m of add.modules || []) {
+    let ex = next.modules.find(x => x.id === m.id || fold(x.name) === fold(m.name));
+    if (!ex) { ex = { id: next.modules.some(x => x.id === m.id) ? uid() : m.id, name: m.name, order: next.modules.length + 1 }; next.modules.push(ex); st.modules++; }
+    modMap[m.id] = ex.id;
+  }
+  for (const l of add.lessons || []) {
+    const mid = modMap[l.moduleId] || l.moduleId;
+    let ex = next.lessons.find(x => x.moduleId === mid && fold(x.name) === fold(l.name));
+    if (!ex) { ex = { ...l, id: next.lessons.some(x => x.id === l.id) ? uid() : l.id, moduleId: mid, order: next.lessons.filter(x => x.moduleId === mid).length + 1 }; next.lessons.push(ex); st.lessons++; }
+    lesMap[l.id] = ex.id;
+  }
+  const have = new Set(next.comments.map(cmKey)), ids = new Set(next.comments.map(c => c.id));
+  for (const c of add.comments || []) {
+    const n = { id: c.id && !ids.has(c.id) ? c.id : uid(), kind: c.kind, level: c.level, text: String(c.text).trim() };
+    if (c.lessonId) n.lessonId = lesMap[c.lessonId] || c.lessonId;
+    if (c.comp) n.comp = c.comp;
+    const k = cmKey(n); if (have.has(k)) { st.dup++; continue; }
+    have.add(k); ids.add(n.id); next.comments.push(n); st.comments++;
+  }
+  return { next, st };
+}
+const compOf = v => { const f = fold(v); if (!f) return ''; const c = COMPS.find(x => fold(x.name).includes(f) || f.includes(fold(x.name)) || f === fold(x.code)); return c ? c.code : ''; };
 
 function setSave(kind, msg) {
   const el = $('#saveState');
@@ -392,20 +526,133 @@ async function write(fn) {
 
 // ---------- calculations (spec BR-01..03) ----------
 function levelOf(x, max) { if (x == null) return null; return Math.min(max, Math.max(1, Math.floor(x + 0.5 + 1e-9))); }
-function studentStats(studentId, lessons, rec, comps) {
+
+// A cancelled lesson stays in the history but never counts. The first lesson that is not cancelled is the baseline.
+const activeLessons = ls => ls.filter(l => !l.cancelled);
+// Attendance: present / absent / unknown (not yet observed). Old data without `att` counts as present when it has a score.
+const hasScore = e => !!e && COMPS.some(c => typeof e[c.code] === 'number');
+function attOf(e) {
+  if (!e) return 'unknown';
+  if (e.absent) return 'absent';
+  if (e.att === 'present' || e.att === 'unknown') return e.att;
+  return hasScore(e) ? 'present' : 'unknown';
+}
+const isPresent = e => attOf(e) === 'present';
+// full = present with every criterion scored; partial = present, some missing.
+function entryState(e, comps) {
+  const a = attOf(e);
+  if (a !== 'present') return a;
+  return comps.every(c => typeof e[c.code] === 'number') ? 'full' : 'partial';
+}
+// ---------- enrolment: transfers and leaving keep every grade ----------
+// A student doc is one enrolment in one class. Fields: joinedAt / leftAt (dates), status 'moved' | 'left',
+// movedFrom / movedTo {classId, studentId, at}, personId shared by every enrolment of the same child.
+// A transfer keeps the old enrolment and its grades; the new class's report adds the lessons attended before.
+const STU = new Map();   // studentId -> student doc, for every class loaded so far
+const HIST = new Map();  // studentId -> { lessons, s } lessons and entries from earlier classes (transfers)
+const knowStudents = list => { for (const st of list) STU.set(st.id, st); return list; };
+const reportable = st => st.status !== 'moved' && st.status !== 'left';
+// A student is listed for a lesson only between joining and leaving the class.
+function enrolledOn(st, date) {
+  if (!st) return true;
+  if (!date) return reportable(st);
+  if (st.joinedAt && date < st.joinedAt) return false;
+  if (st.leftAt && date >= st.leftAt) return false;
+  return true;
+}
+const byDate = (a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')) || (a.order ?? 0) - (b.order ?? 0);
+function mergeHist(studentId, lessons, rec) {
+  const st = STU.get(studentId), h = HIST.get(studentId);
+  let ls = st ? lessons.filter(l => enrolledOn(st, l.date)) : lessons;
+  if (h?.lessons.length) { ls = [...h.lessons, ...ls].sort(byDate); rec = { ...(rec || {}), s: { ...h.s, ...(rec?.s || {}) } }; }
+  return { lessons: ls, rec };
+}
+// Follow movedFrom links (up to 5 hops) and keep the lessons attended in each earlier class. Resolves true if anything new loaded.
+async function loadHist(students) {
+  let changed = false;
+  for (const st of students) {
+    if (!st.movedFrom || HIST.has(st.id)) continue;
+    const lessons = [], s = {}; let cur = st, hops = 0;
+    while (cur?.movedFrom && hops++ < 5) {
+      const { classId, studentId } = cur.movedFrom;
+      const [ls, recs, sts] = await Promise.all([Store.list('lessons', 'classId', classId), Store.list('records', 'classId', classId), Store.list('students', 'classId', classId)]);
+      const prev = knowStudents(sts).find(x => x.id === studentId); if (!prev) break;
+      const rec = recs.find(r => r.studentId === studentId);
+      for (const l of ls.filter(l => enrolledOn(prev, l.date))) { lessons.push({ ...l, fromClass: classId }); if (rec?.s?.[l.id]) s[l.id] = rec.s[l.id]; }
+      cur = prev;
+    }
+    HIST.set(st.id, { lessons, s }); changed = true;
+  }
+  return changed;
+}
+
+function lessonProgress(lesson, students, records, comps) {
+  students = students.filter(st => enrolledOn(st, lesson.date));
+  const o = { full: 0, partial: 0, absent: 0, unknown: 0, total: students.length };
+  for (const st of students) o[entryState(records[st.id]?.s?.[lesson.id], comps)]++;
+  o.done = o.full + o.absent; o.complete = o.done === o.total;
+  return o;
+}
+
+// merged = true when the caller already passed the lessons through mergeHist.
+function studentStats(studentId, lessons, rec, comps, merged) {
+  if (!merged) ({ lessons, rec } = mergeHist(studentId, lessons, rec));
   const s = rec?.s || {};
+  lessons = activeLessons(lessons);
   const baseLesson = lessons[0];
   const baseline = {}, final = {}, count = {};
   for (const c of comps) {
-    const b = baseLesson && !s[baseLesson.id]?.absent ? s[baseLesson.id]?.[c.code] : null;
+    const be = baseLesson && s[baseLesson.id];
+    const b = isPresent(be) ? be[c.code] : null;
     baseline[c.code] = typeof b === 'number' ? b : null;
     let sum = 0, n = 0;
-    for (const l of lessons.slice(1)) { const e = s[l.id]; if (!e || e.absent) continue; const v = e[c.code]; if (typeof v === 'number') { sum += v; n++; } }
+    for (const l of lessons.slice(1)) { const e = s[l.id]; if (!isPresent(e)) continue; const v = e[c.code]; if (typeof v === 'number') { sum += v; n++; } }
     final[c.code] = n ? sum / n : null; count[c.code] = n;
   }
   let graded = 0;
-  for (const l of lessons) { const e = s[l.id]; if (e && !e.absent && comps.every(c => typeof e[c.code] === 'number')) graded++; }
-  return { baseline, final, count, graded };
+  for (const l of lessons) if (entryState(s[l.id], comps) === 'full') graded++;
+  return { baseline, final, count, graded, nLessons: lessons.length };
+}
+
+// Decision 16/11: the 4 teacher fields are optional; any gap only marks the student "Chưa xong", never blocks export.
+const FIN_FIELDS = [['general', 'nhận xét chung'], ['positive', 'điểm tích cực'], ['develop', 'nội dung cần phát triển'], ['suggest', 'đề xuất']];
+function studentStatus(stats, comps, fin) {
+  const why = [];
+  const noBase = comps.filter(c => stats.baseline[c.code] == null).map(c => c.name);
+  const noFinal = comps.filter(c => stats.final[c.code] == null).map(c => c.name);
+  if (noBase.length) why.push('thiếu điểm đầu kỳ: ' + noBase.join(', '));
+  if (noFinal.length) why.push('thiếu điểm cuối kỳ: ' + noFinal.join(', '));
+  const empty = FIN_FIELDS.filter(([k]) => !String(fin?.[k] || '').trim()).map(x => x[1]);
+  if (empty.length) why.push('chưa có ' + empty.join(', '));
+  return { done: !why.length, why };
+}
+
+// Report workflow (decision 16/11: only the end-of-term report is approved, never single lessons).
+// draft -> submitted -> approved | returned. Approving stores a snapshot; changing it later starts a new version.
+const REPORT = { draft: ['Nháp', ''], submitted: ['Chờ duyệt', 'blue'], approved: ['Đã duyệt', 'ok'], returned: ['Bị trả lại', 'bad'] };
+const repStatus = fin => REPORT[fin?.status] ? fin.status : 'draft';
+const repVersion = fin => fin?.version || 1;
+function repPill(fin) {
+  const s = repStatus(fin), [label, cls] = REPORT[s];
+  return '<span class="pill ' + cls + '">' + label + (s === 'approved' ? ' · v' + (fin.approved?.version || repVersion(fin)) : repVersion(fin) > 1 ? ' · v' + repVersion(fin) : '') + '</span>';
+}
+const isSerious = w => /^Thiếu mô tả/.test(w);
+// Everything printed for one student, computed from live data. Also used as the approval snapshot.
+function reportOf(st, lessons, rec, sch, sem) {
+  const comps = activeComps(sch);
+  ({ lessons, rec } = mergeHist(st.id, lessons, rec || {}));
+  rec = rec || {};
+  const stats = studentStats(st.id, lessons, rec, comps, true), fin = rec.fin || {};
+  const g = genComment(st, stats, sch, sem, fin);
+  return {
+    name: st.name, code: st.code || '', comment: fin.textEdited ? (fin.text || '') : g.text, warnings: g.warnings,
+    baseline: stats.baseline, final: stats.final, count: stats.count,
+    rows: activeLessons(lessons).map(l => {
+      const e = rec.s?.[l.id] || {}, scores = {};
+      if (isPresent(e)) comps.forEach(c => { if (typeof e[c.code] === 'number') scores[c.code] = e[c.code]; });
+      return { date: l.date, project: l.project, note: e.note || '', absent: attOf(e) === 'absent', scores };
+    }),
+  };
 }
 function genComment(st, stats, sc, sem, fin) {
   const comps = activeComps(sc), max = maxLevel(sc), set = settings();
@@ -465,15 +712,23 @@ function subscribeGlobal() {
   Store.watch('semesters', null, null, r => { S.semesters = r.sort((a, b) => String(b.year).localeCompare(String(a.year)) || String(b.name).localeCompare(String(a.name))); fixSel('sem'); }, onErr);
   Store.watch('schools', null, null, r => { S.schools = r.sort((a, b) => a.name.localeCompare(b.name, 'vi')); fixSel('sch'); }, onErr);
   Store.watch('classes', null, null, r => { S.classes = r.sort((a, b) => a.name.localeCompare(b.name, 'vi', { numeric: true })); fixSel('cls'); }, onErr);
-  Store.watch('settings', null, null, r => { const m = r.find(x => x.id === 'main'); S.settings = m ? { ...m } : { ...DEFAULT_SETTINGS }; render(); }, onErr);
+  Store.watch('settings', null, null, r => {
+    const m = r.find(x => x.id === 'main'); S.settings = m ? { ...m } : { ...DEFAULT_SETTINGS };
+    const lb = r.find(x => x.id === 'library'); S.library = lb ? { modules: lb.modules || [], lessons: lb.lessons || [], comments: lb.comments || [] } : null;
+    const sf = r.find(x => x.id === 'staff'); S.staff = sf ? { teachers: sf.teachers || [] } : null; S.staffLoaded = true;
+    renderWho(); fixSel();
+  }, onErr);
 }
 function subscribeClass() {
   if (S.loadedClass === S.sel.cls) return;
   classUnsubs.forEach(u => u()); classUnsubs = [];
-  S.students = []; S.lessons = []; S.records = {}; S.loadedClass = S.sel.cls;
+  S.students = []; S.lessons = []; S.records = {}; S.loadedClass = S.sel.cls; HIST.clear();
   if (!S.sel.cls) return;
   const id = S.sel.cls;
-  classUnsubs.push(Store.watch('students', 'classId', id, r => { S.students = r.sort(byOrder); render(); }));
+  classUnsubs.push(Store.watch('students', 'classId', id, r => {
+    S.students = knowStudents(r.sort(byOrder)); render();
+    loadHist(S.students).then(ch => { if (ch && S.loadedClass === id) render(); }).catch(() => {});
+  }));
   classUnsubs.push(Store.watch('lessons', 'classId', id, r => { S.lessons = r.sort((a, b) => (a.order - b.order) || String(a.date).localeCompare(String(b.date))); render(); }));
   classUnsubs.push(Store.watch('records', 'classId', id, r => {
     // keep local values for fields with unsaved typing
@@ -490,7 +745,7 @@ function fixSel(which) {
   if (!sems.find(s => s.id === S.sel.sem)) S.sel.sem = sems[0]?.id || '';
   const schs = visSchools();
   if (!schs.find(s => s.id === S.sel.school)) S.sel.school = schs[0]?.id || '';
-  const cls = S.classes.filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
+  const cls = visClasses().filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
   if (!cls.find(c => c.id === S.sel.cls)) S.sel.cls = cls[0]?.id || '';
   saveSel(); renderCtx(); subscribeClass(); render();
 }
@@ -498,7 +753,7 @@ function renderCtx() {
   const opt = (v, label, cur) => '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>';
   $('#selSem').innerHTML = visSems().length ? visSems().map(s => opt(s.id, s.name + ' · ' + s.year, S.sel.sem)).join('') : '<option value="">Chưa có học kỳ</option>';
   $('#selSchool').innerHTML = visSchools().length ? visSchools().map(s => opt(s.id, s.name, S.sel.school)).join('') : '<option value="">Chưa có trường</option>';
-  const cls = S.classes.filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
+  const cls = visClasses().filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
   $('#selClass').innerHTML = cls.length ? cls.map(c => opt(c.id, c.name, S.sel.cls)).join('') : '<option value="">Chưa có lớp</option>';
   if (!isStaff() && !['cham', 'tonghop'].includes(S.sel.tab)) S.sel.tab = 'cham';
   document.querySelectorAll('#tabs button').forEach(b => { b.setAttribute('aria-selected', String(b.dataset.tab === S.sel.tab)); b.hidden = !isStaff() && !['cham', 'tonghop'].includes(b.dataset.tab); });
@@ -515,8 +770,8 @@ function render(force) {
   if (!force && a && $('#view').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { renderPending = true; return; }
   renderPending = false;
   const y = window.scrollY;
-  const fn = { cham: viewCham, tonghop: viewTongHop, danhmuc: viewDanhMuc, caidat: viewCaiDat }[S.sel.tab] || viewCham;
-  $('#view').innerHTML = fn();
+  const fn = { cham: viewCham, tonghop: viewTongHop, duyet: viewDuyet, danhmuc: viewDanhMuc, caidat: viewCaiDat }[S.sel.tab] || viewCham;
+  $('#view').innerHTML = askBox() + fn();
   window.scrollTo(0, y);
   afterRender();
 }
@@ -524,11 +779,36 @@ $('#view').addEventListener('focusout', () => setTimeout(() => { if (renderPendi
 function afterRender() {
   document.querySelectorAll('textarea[data-auto]').forEach(autosize);
   if (S.sel.tab === 'tonghop') drawRadar();
+  if (S.sel.tab === 'cham') applyChamFilter();
+  if (S.ui.ask) $('#askReason')?.focus();
+}
+
+// A reason box shown above the view for actions that must record why (cancel a lesson, unlock the baseline, return a report).
+function askBox() {
+  const a = S.ui.ask; if (!a) return '';
+  const T = {
+    cancel: ['Hủy buổi học', 'Lý do hủy, ví dụ: nghỉ lễ', false],
+    unlock: ['Mở khóa điểm đầu kỳ', 'Lý do mở khóa (bắt buộc)', true],
+    return: ['Trả lại ' + (a.items?.length || 0) + ' report cho giáo viên', 'Lý do trả lại (bắt buộc, giáo viên sẽ thấy)', true],
+  }[a.kind];
+  return '<section class="panel ask"><h3>' + T[0] + '</h3>' + (a.note ? '<p class="muted small" style="margin:0">' + esc(a.note) + '</p>' : '') +
+    '<input type="text" id="askReason" placeholder="' + esc(T[1]) + '"' + (T[2] ? ' required' : '') + '>' +
+    '<div class="row"><button class="btn pri" data-act="askOk">Xác nhận</button><button class="btn" data-act="askCancel">Thôi</button><span class="small" id="askErr" style="color:var(--bad)"></span></div></section>';
+}
+function applyChamFilter() {
+  const q = fold(S.ui.q), todo = S.ui.onlyTodo;
+  let shown = 0;
+  document.querySelectorAll('#chamRows tr[data-name]').forEach(tr => {
+    const ok = (!q || tr.dataset.name.includes(q)) && (!todo || tr.dataset.todo === '1');
+    tr.hidden = !ok; if (ok) shown++;
+  });
+  const m = $('#filterMsg'); if (m) m.textContent = q || todo ? 'Đang hiện ' + shown + '/' + S.students.length + ' học sinh' : '';
 }
 function autosize(t) { t.style.height = 'auto'; t.style.height = Math.min(600, t.scrollHeight + 2) + 'px'; }
 
 function needClass() {
-  if (!isStaff() && !S.classes.length) return '<div class="empty"><b>Bạn chưa được phân công lớp nào</b>Nhờ quản lý chuyên môn vào Danh mục → Giáo viên để phân công lớp cho bạn, rồi tải lại trang.</div>';
+  if (meLocked()) return '<div class="empty"><b>Tài khoản của bạn đang bị khóa</b>Bạn không vào được lớp nào. Điểm và nhận xét bạn đã nhập vẫn được giữ. Liên hệ quản lý chuyên môn nếu cần mở lại.</div>';
+  if (!isStaff() && !visClasses().length) return '<div class="empty"><b>Bạn chưa được phân công lớp nào</b>Nhờ quản lý chuyên môn vào Danh mục → Giáo viên &amp; phân công để chỉ định lớp cho bạn.</div>';
   if (!S.semesters.length || !S.schools.length) return '<div class="empty"><b>Bắt đầu bằng việc tạo học kỳ và trường</b>Vào tab <b style="display:inline">Danh mục</b> để thêm năm học, học kỳ, trường và lớp.</div>';
   if (!S.sel.cls) return '<div class="empty"><b>Trường này chưa có lớp trong học kỳ đã chọn</b>Vào tab Danh mục → Lớp để thêm lớp, hoặc chọn học kỳ khác ở trên.</div>';
   return '';
@@ -542,43 +822,125 @@ function viewCham() {
   const nc = needClass(); if (nc) return nc;
   const sc = school(), comps = activeComps(sc), max = maxLevel(sc), lv = settings().levels;
   if (!S.lessons.length || !S.students.length) return '<div class="empty"><b>Lớp chưa có ' + (!S.students.length ? 'học sinh' : 'danh sách bài học') + '</b>Vào Danh mục → ' + (!S.students.length ? 'Học sinh' : 'Bài học') + ' để nhập (dán từ Excel được).</div>';
-  if (!S.lessons.find(l => l.id === S.sel.lesson)) S.sel.lesson = S.lessons[0].id;
+  const prog = l => lessonProgress(l, S.students, S.records, comps);
+  const act = activeLessons(S.lessons), baseId = act[0]?.id;
+  const nextTodo = act.find(l => !prog(l).complete);
+  if (!S.lessons.find(l => l.id === S.sel.lesson)) S.sel.lesson = (nextTodo || S.lessons[0]).id;
   const L = S.lessons.find(l => l.id === S.sel.lesson), li = S.lessons.indexOf(L);
-  const fullCount = l => S.students.filter(st => { const e = S.records[st.id]?.s?.[l.id]; return e && (e.absent || comps.every(c => typeof e[c.code] === 'number')); }).length;
+  const isBase = L.id === baseId, locked = isBase && !!L.locked, readOnly = locked || !!L.cancelled;
   const strip = S.lessons.map((l, i) => {
-    const pct = Math.round(100 * fullCount(l) / S.students.length);
-    return '<button class="lesson' + (i === 0 ? ' base' : '') + '" data-act="lesson" data-id="' + l.id + '" aria-pressed="' + (l.id === L.id) + '"><b>B' + String(i + 1).padStart(2, '0') + '</b><span>' + esc(fmtDate(l.date)) + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></button>';
+    const p = prog(l), pct = l.cancelled ? 0 : Math.round(100 * p.done / Math.max(1, p.total));
+    return '<button class="lesson' + (l.id === baseId ? ' base' : '') + (l.cancelled ? ' cancelled' : '') + '" data-act="lesson" data-id="' + l.id + '" aria-pressed="' + (l.id === L.id) + '"' + (l.cancelled ? ' title="Buổi đã hủy"' : '') + '>' +
+      '<b>B' + String(i + 1).padStart(2, '0') + '</b><span>' + (l.cancelled ? 'đã hủy' : esc(fmtDate(l.date))) + (l.id === baseId && l.locked ? ' · <span class="lk">khóa</span>' : '') + '</span>' +
+      '<span class="bar"><i style="width:' + pct + '%"></i></span></button>';
   }).join('');
-  const done = fullCount(L);
-  const lib = (sc?.library || []);
-  const rowsHtml = S.students.map((st, i) => {
+  const P = prog(L);
+  const LL = libLessonFor(L);
+  const dis = readOnly ? ' disabled' : '';
+  const inLesson = S.students.filter(st => enrolledOn(st, L.date)), notIn = S.students.length - inLesson.length;
+  const rowsHtml = inLesson.map((st, i) => {
     const e = S.records[st.id]?.s?.[L.id] || {};
+    const a = attOf(e), state = entryState(e, comps);
     const scores = comps.map(c => '<div class="sc"><span>' + esc(c.name) + '</span><div class="seg" role="group" aria-label="' + esc(c.name) + '">' +
-      Array.from({ length: max }, (_, k) => k + 1).map(v => '<button data-act="score" data-st="' + st.id + '" data-c="' + c.code + '" data-v="' + v + '" aria-pressed="' + (e[c.code] === v) + '" title="' + esc(lv[v]?.name || '') + ': ' + esc(rubricText(sc, c.code, v)) + '">' + v + '</button>').join('') +
+      Array.from({ length: max }, (_, k) => k + 1).map(v => '<button data-act="score" data-st="' + st.id + '" data-c="' + c.code + '" data-v="' + v + '" aria-pressed="' + (e[c.code] === v) + '" title="' + esc(lv[v]?.name || '') + ': ' + esc(rubricText(sc, c.code, v)) + '"' + dis + '>' + v + '</button>').join('') +
       '</div></div>').join('');
-    const levelsSeen = new Set(comps.map(c => e[c.code]).filter(Boolean));
-    const sug = lib.filter(x => (!x.lesson || x.lesson === L.project) && (!levelsSeen.size || levelsSeen.has(Number(x.level)))).slice(0, 4);
-    const missing = !e.absent && comps.some(c => typeof e[c.code] !== 'number');
-    return '<tr class="' + (e.absent ? 'absent' : '') + '"><td class="n">' + (i + 1) + '</td>' +
-      '<td class="name">' + esc(st.name) + '<small>' + esc(st.code || '') + '</small>' +
-      '<label class="chk"><input type="checkbox" data-act="absent" data-st="' + st.id + '"' + (e.absent ? ' checked' : '') + '> Vắng</label> ' +
-      (e.absent ? '' : missing ? '<span class="pill warn">Chưa đủ</span>' : '<span class="pill ok">Đủ điểm</span>') + '</td>' +
+    const attBtns = '<div class="att" role="group" aria-label="Điểm danh">' + [['present', 'Có mặt'], ['absent', 'Vắng'], ['unknown', 'Chưa rõ']].map(([v, t]) =>
+      '<button data-act="att" data-st="' + st.id + '" data-v="' + v + '" aria-pressed="' + (a === v) + '"' + dis + '>' + t + '</button>').join('') + '</div>';
+    const open = S.ui.pick === st.id;
+    const pill ={ full: '<span class="pill ok">Đủ điểm</span>', partial: '<span class="pill warn">Chưa đủ điểm</span>', absent: '<span class="pill">Vắng: không tính điểm</span>', unknown: '<span class="pill warn">Chưa điểm danh</span>' }[state];
+    return '<tr class="' + (a === 'absent' ? 'absent' : e.att === 'unknown' ? 'unk' : '') + '" data-name="' + esc(fold(st.name + ' ' + (st.code || ''))) + '" data-todo="' + (state === 'partial' || state === 'unknown' ? 1 : 0) + '"><td class="n">' + (i + 1) + '</td>' +
+      '<td class="name">' + esc(st.name) + '<small>' + esc(st.code || '') + '</small>' + attBtns + '<div>' + pill + '</div>' +
+      (e.by ? '<small class="by">Sửa gần nhất: ' + esc(e.by) + ' · ' + esc(fmtWhen(e.at)) + '</small>' : '') + '</td>' +
       '<td><div class="scores">' + scores + '</div></td>' +
       '<td class="note"><textarea data-auto data-act="note" data-st="' + st.id + '" id="note-' + st.id + '-' + L.id + '" rows="2" placeholder="Nhận xét hằng ngày…">' + esc(e.note || '') + '</textarea>' +
-      (sug.length ? '<div class="sugg">' + sug.map(x => '<button data-act="sugg" data-st="' + st.id + '" title="' + esc(COMP_NAME[x.comp] || '') + ' · cấp ' + esc(x.level) + '">+ ' + esc(x.text) + '</button>').join('') + '</div>' : '') +
+      '<div class="row" style="margin-top:4px"><button class="btn ghost small" data-act="pickOpen" data-st="' + st.id + '" aria-expanded="' + open + '">' + (open ? 'Đóng thư viện câu' : 'Câu từ thư viện' + (LL ? ' · ' + libComments('daily', LL.id).length : '')) + '</button></div>' +
+      (open ? pickerHtml(st, e, comps, L, LL) : '') +
       '</td></tr>';
   }).join('');
-  return '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(klass()?.name) + ' · Buổi ' + (li + 1) + (li === 0 ? ' <span class="pill" style="color:var(--base)">Mốc đầu kỳ</span>' : '') + '</h2>' +
-    '<div class="muted">' + esc(fmtDate(L.date)) + ' · ' + esc(L.project || 'Chưa có tên dự án') + (L.content ? ' · ' + esc(L.content) : '') + '</div></div>' +
-    '<span class="pill ' + (done === S.students.length ? 'ok' : 'rose') + '">Đã chấm ' + done + '/' + S.students.length + '</span>' +
-    '<button class="btn" data-act="prevLesson"' + (li === 0 ? ' disabled' : '') + '>← Buổi trước</button><button class="btn" data-act="nextLesson"' + (li === S.lessons.length - 1 ? ' disabled' : '') + '>Buổi sau →</button></div>' +
-    '<div class="lessons" style="margin-top:12px">' + strip + '</div></section>' +
+
+  const statusPill = L.cancelled ? '<span class="pill">Buổi đã hủy</span>'
+    : P.complete ? (L.done ? '<span class="pill ok">Đã hoàn tất</span>' : '<span class="pill ok">Đủ ' + P.done + '/' + P.total + ', chưa bấm hoàn tất</span>')
+    : '<span class="pill rose">Đã chấm ' + P.done + '/' + P.total + '</span>';
+  const missingTxt = [P.unknown ? P.unknown + ' học sinh chưa điểm danh' : '', P.partial ? P.partial + ' học sinh chưa đủ điểm' : ''].filter(Boolean).join(', ');
+  const doneBtn = L.cancelled ? '' : L.done
+    ? '<span class="small muted">Hoàn tất: ' + esc(L.done.by) + ' · ' + esc(fmtWhen(L.done.at)) + '</span>'
+    : '<button class="btn pri" data-act="doneLesson"' + (P.complete ? '' : ' disabled title="Còn ' + esc(missingTxt) + '"') + '>Hoàn tất buổi ' + (li + 1) + '</button>';
+  const staffBtns = !isStaff() ? '' :
+    (isBase && !L.cancelled ? (locked ? '<button class="btn" data-act="unlockBase">Mở khóa điểm đầu kỳ…</button>' : '<button class="btn" data-act="lockBase">Khóa điểm đầu kỳ</button>') : '') +
+    (locked ? '' : L.cancelled ? '<button class="btn" data-act="uncancelLesson">Bỏ hủy buổi</button>' : '<button class="btn ghost" data-act="cancelLesson">Đánh dấu buổi hủy…</button>');
+  const lastLog = (L.lockLog || []).slice(-1)[0];
+  const banner = L.cancelled ? '<div class="note-box">Buổi này đã hủy' + (L.cancelReason ? ' (' + esc(L.cancelReason) + ')' : '') + '. Buổi hủy vẫn giữ trong lịch sử nhưng không tính vào điểm và tiến độ.</div>'
+    : locked ? '<div class="note-box">Điểm đầu kỳ đã khóa bởi ' + esc(L.locked.by) + ' lúc ' + esc(fmtWhen(L.locked.at)) + '. Chỉ quản lý chuyên môn mở lại được, kèm lý do.</div>'
+    : isBase ? '<div class="note-box">Buổi này là mốc đầu kỳ. Chấm xong, quản lý chuyên môn bấm "Khóa điểm đầu kỳ" để giữ cố định.' + (lastLog?.act === 'unlock' ? ' Lần mở khóa gần nhất: ' + esc(lastLog.by) + ', lý do: ' + esc(lastLog.reason) + '.' : '') + '</div>'
+    : L.done && !P.complete ? '<div class="note-box">Buổi đã bấm hoàn tất nhưng hiện còn ' + esc(missingTxt) + '.</div>' : '';
+
+  const K = klass(), tIds = (K?.teacherIds || []).filter(Boolean);
+  const myTemp = isTrialTeacher() ? (K?.temps || []).find(x => x.teacherId === S.me.id && tempState(x) === 'active' && accessOf(K, S.me.id) === 'temp') : null;
+  return '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(K?.name) + ' · Buổi ' + (li + 1) + (isBase ? ' <span class="pill" style="color:var(--base)">Mốc đầu kỳ</span>' : '') + '</h2>' +
+    '<div class="muted">' + esc(fmtDate(L.date)) + ' · ' + esc(L.project || 'Chưa có tên dự án') + (L.content ? ' · ' + esc(L.content) : '') + '</div>' +
+    (tIds.length ? '<div class="muted small">Giáo viên: ' + esc(tIds.map(tName).join(', ')) + '</div>' : '') + '</div>' +
+    (myTemp ? '<span class="pill blue" title="' + esc(myTemp.reason || '') + '">Bạn dạy thay đến ' + esc(fmtD(myTemp.to)) + '</span>' : '') +
+    statusPill +
+    '<button class="btn" data-act="prevLesson"' + (li === 0 ? ' disabled' : '') + '>← Buổi trước</button><button class="btn" data-act="nextLesson"' + (li === S.lessons.length - 1 ? ' disabled' : '') + '>Buổi sau →</button>' +
+    (nextTodo && nextTodo.id !== L.id ? '<button class="btn" data-act="lesson" data-id="' + nextTodo.id + '">Tới buổi chưa xong (B' + String(S.lessons.indexOf(nextTodo) + 1).padStart(2, '0') + ')</button>' : '') + '</div>' +
+    '<div class="lessons" style="margin-top:12px">' + strip + '</div>' +
+    '<div class="tools"><input type="search" id="stSearch" data-act="stSearch" placeholder="Tìm học sinh…" value="' + esc(S.ui.q) + '">' +
+    '<label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="onlyTodo"' + (S.ui.onlyTodo ? ' checked' : '') + '> Chỉ hiện học sinh chưa xong</label>' +
+    '<div class="progress" title="' + P.done + '/' + P.total + '"><i style="width:' + Math.round(100 * P.done / Math.max(1, P.total)) + '%"></i></div><span class="small muted">' + P.done + '/' + P.total + '</span>' +
+    '<span class="small muted" id="filterMsg"></span><span class="grow"></span>' + doneBtn + staffBtns + '</div></section>' +
+    banner +
     (Store.mode === 'local' ? '<div class="note-box">Đang lưu dữ liệu trên trình duyệt này (chế độ thử, chưa kết nối cơ sở dữ liệu).</div>' : '') +
-    '<div class="sheet"><table><thead><tr><th>#</th><th>Học sinh</th><th>Điểm (1–' + max + ')</th><th>Nhận xét hằng ngày</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
-    '<p class="muted small">Bấm lại vào điểm đang chọn để xóa. Ô trống không bị tính là 0. Buổi 1 là mốc đầu kỳ; điểm cuối kỳ là trung bình các buổi từ 2 trở đi.</p>';
+    (notIn ? '<p class="muted small" style="margin:0">' + notIn + ' học sinh không có tên ở buổi này vì chưa vào lớp, đã chuyển lớp hoặc đã thôi học (xem Danh mục → Học sinh).</p>' : '') +
+    '<div class="sheet"><table><thead><tr><th>#</th><th>Học sinh</th><th>Điểm (1–' + max + ')</th><th>Nhận xét hằng ngày</th></tr></thead><tbody id="chamRows">' + rowsHtml + '</tbody></table></div>' +
+    '<p class="muted small">Bấm lại vào điểm đang chọn để xóa. Ô trống không bị tính là 0. Chấm điểm tự đánh dấu Có mặt; học sinh Vắng hoặc Chưa rõ không được tính điểm buổi đó. Buổi không hủy đầu tiên là mốc đầu kỳ; điểm cuối kỳ là trung bình các buổi sau đó.</p>';
 }
 
+// ---------- comment picker while grading ----------
+// Sentences of the session's library lesson + quick lines per criterion + the school's older free-text library.
+function pickPool(L, LL, comps) {
+  const sc = school(), codes = new Set(comps.map(c => c.code));
+  const old = (sc?.library || []).filter(x => !x.lesson || x.lesson === L.project).map((x, i) => ({ id: 'old' + i, kind: 'daily', comp: x.comp || '', level: Number(x.level) || 0, text: x.text }));
+  return [...(LL ? libComments('daily', LL.id) : []), ...old, ...libComments('quick').filter(c => !c.comp || codes.has(c.comp))];
+}
+const noteHas = (note, text) => fold(note).includes(fold(text));
+function pickerHtml(st, e, comps, L, LL) {
+  const U = S.ui, pool = pickPool(L, LL, comps);
+  const scored = comps.filter(c => typeof e[c.code] === 'number');
+  const levels = new Set(scored.map(c => e[c.code]));
+  const byScore = U.pickByScore && scored.length;
+  const list = pool.filter(c => (!U.pickComp || c.comp === U.pickComp) && (!byScore || (c.comp ? e[c.comp] === c.level : levels.has(c.level))))
+    .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'daily' ? -1 : 1) || a.level - b.level);
+  const note = e.note || '';
+  return '<div class="picker" role="region" aria-label="Thư viện câu nhận xét">' +
+    '<div class="small"><b>' + (LL ? 'Câu của bài "' + esc(LL.name) + '"' : 'Buổi này chưa gắn bài trong thư viện') + '</b>' +
+    (LL ? '' : '<span class="muted"> · gắn ở Danh mục → Lịch buổi học. Đang hiện câu nhanh theo năng lực.</span>') + '</div>' +
+    '<div class="row"><label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="pickByScore"' + (U.pickByScore ? ' checked' : '') + (scored.length ? '' : ' disabled') + '> Theo điểm vừa chấm' + (scored.length ? '' : ' (chưa chấm)') + '</label>' +
+    '<span class="small muted">' + list.length + '/' + pool.length + ' câu</span></div>' +
+    '<div class="chips"><button data-act="pickComp" data-v="" aria-pressed="' + !U.pickComp + '">Mọi năng lực</button>' + comps.map(c => '<button data-act="pickComp" data-v="' + c.code + '" aria-pressed="' + (U.pickComp === c.code) + '">' + esc(c.name) + '</button>').join('') + '</div>' +
+    (list.length ? '<div class="picks">' + list.slice(0, 60).map(c => { const on = noteHas(note, c.text); return '<button class="pick' + (on ? ' on' : '') + '" data-act="pickText" data-st="' + st.id + '" data-cid="' + c.id + '" aria-pressed="' + on + '">' + (on ? '✓ ' : '+ ') + esc(c.text) +
+      '<small>' + (c.comp ? esc(COMP_NAME[c.comp]) + ' · ' : '') + 'cấp ' + c.level + (c.kind === 'quick' ? ' · câu nhanh' : '') + (on ? ' · đã có trong nhận xét, bấm để gỡ' : '') + '</small></button>'; }).join('') + '</div>'
+      : '<div class="small muted">Không có câu khớp bộ lọc. Bỏ chọn "Theo điểm vừa chấm" hoặc gõ nhận xét riêng vào ô phía trên.</div>') +
+    '<div class="small muted">Câu được chép vào ô nhận xét, nên sửa thư viện sau này không làm đổi nhận xét đã ghi. Chọn câu không làm đổi điểm.</div></div>';
+}
+
+// A cancelled lesson and a locked baseline accept no score or attendance change.
+function lessonReadOnly() {
+  const L = S.lessons.find(l => l.id === S.sel.lesson); if (!L) return true;
+  return !!L.cancelled || (L.id === activeLessons(S.lessons)[0]?.id && !!L.locked);
+}
 async function patchRecord(studentId, patch) {
+  if (patch.s) {
+    let graded = false;
+    for (const p of Object.values(patch.s)) if (COMPS.some(c => c.code in p) || 'absent' in p || 'att' in p) { Object.assign(p, stamp()); graded = true; }
+    // Decision 16/11: two teachers may grade the same lesson; the last edit wins and keeps the editor's name.
+    // A score change after the report was sent or approved sends it back to draft (a new version once approved).
+    const fin = S.records[studentId]?.fin || {}, rs = repStatus(fin);
+    if (graded && (rs === 'submitted' || rs === 'approved')) {
+      patch.fin = { ...(patch.fin || {}), status: 'draft', version: repVersion(fin) + (rs === 'approved' ? 1 : 0),
+        reopened: 'Điểm hoặc điểm danh đã đổi sau khi ' + (rs === 'approved' ? 'duyệt' : 'gửi duyệt') + '. Cần gửi duyệt lại.',
+        history: [...(fin.history || []), { act: 'auto-reopen', ...stamp() }] };
+    }
+  }
   const id = recId(S.sel.cls, studentId);
   const exists = !!S.records[studentId];
   const rec = S.records[studentId] || (S.records[studentId] = { id, classId: S.sel.cls, studentId, s: {}, fin: {} });
@@ -611,41 +973,105 @@ window.addEventListener('beforeunload', e => { if (Object.keys(pendingNotes).len
 function viewTongHop() {
   const nc = needClass(); if (nc) return nc;
   const sc = school(), comps = activeComps(sc), sem = semester();
-  if (!S.students.length) return '<div class="empty"><b>Lớp chưa có học sinh</b>Vào Danh mục → Học sinh để nhập danh sách.</div>';
-  if (!S.students.find(s => s.id === S.sel.student)) S.sel.student = S.students[0].id;
-  const nL = Math.max(0, S.lessons.length - 1);
-  const rows = S.students.map((st, i) => {
+  // Students who moved away or left are not reported here (a transferred student is reported in the new class).
+  const SS = S.students.filter(reportable), gone = S.students.length - SS.length;
+  if (!SS.length) return '<div class="empty"><b>Lớp chưa có học sinh đang học</b>Vào Danh mục → Học sinh để nhập danh sách.</div>';
+  if (!SS.find(s => s.id === S.sel.student)) S.sel.student = SS[0].id;
+  const act = activeLessons(S.lessons), nL = Math.max(0, act.length - 1), nCancel = S.lessons.length - act.length;
+  const cnt = { done: 0, submitted: 0, approved: 0, returned: 0 };
+  const rows = SS.map((st, i) => {
     const stats = studentStats(st.id, S.lessons, S.records[st.id], comps);
     const fin = S.records[st.id]?.fin || {};
-    const hasGv = (fin.general || fin.positive || fin.develop) && fin.suggest;
+    const ss = studentStatus(stats, comps, fin), rs = repStatus(fin);
+    if (ss.done) cnt.done++;
+    if (rs in cnt) cnt[rs]++;
     return '<tr class="click' + (st.id === S.sel.student ? ' on' : '') + '" data-act="pickStudent" data-id="' + st.id + '"><td>' + (i + 1) + '</td><td><b>' + esc(st.name) + '</b></td>' +
       comps.map(c => '<td class="v">' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b></td>').join('') +
-      '<td class="v">' + stats.graded + '/' + S.lessons.length + '</td><td>' + (hasGv ? '<span class="pill ok">Đã nhận xét</span>' : '<span class="pill warn">Chưa nhận xét</span>') + (fin.textEdited ? ' <span class="pill">Sửa tay</span>' : '') + '</td></tr>';
+      '<td class="v">' + stats.graded + '/' + act.length + '</td>' +
+      '<td>' + (ss.done ? '<span class="pill ok">Đã xong</span>' : '<span class="pill warn" title="' + esc(ss.why.join('; ')) + '">Chưa xong</span>') + (fin.textEdited ? ' <span class="pill">Sửa tay</span>' : '') + '</td>' +
+      '<td>' + repPill(fin) + '</td></tr>';
   }).join('');
-  const st = S.students.find(s => s.id === S.sel.student);
+  const st = SS.find(s => s.id === S.sel.student);
   const stats = studentStats(st.id, S.lessons, S.records[st.id], comps);
   const fin = S.records[st.id]?.fin || {};
   const g = genComment(st, stats, sc, sem, fin);
+  const ss = studentStatus(stats, comps, fin), rs = repStatus(fin);
+  const frozen = rs === 'submitted' || rs === 'approved';
+  const ro = frozen ? ' readonly' : '';
   const finalText = fin.textEdited ? (fin.text || '') : g.text;
-  const idx = S.students.indexOf(st);
-  const field = (k, label, ph) => '<label class="field"><span>' + label + '</span><textarea data-auto data-act="fin" data-k="' + k + '" id="fin-' + k + '-' + st.id + '" rows="3" placeholder="' + ph + '">' + esc(fin[k] || '') + '</textarea></label>';
-  return '<section class="panel"><div class="row"><div class="grow"><h2>Tổng hợp lớp ' + esc(klass()?.name) + '</h2><div class="muted small">Đầu kỳ = buổi 1 · Cuối kỳ = trung bình buổi 2–' + S.lessons.length + ' (' + nL + ' buổi), bỏ qua buổi vắng và ô trống.</div></div>' +
-    '<button class="btn pri" data-act="exportClass">Xuất Excel cả lớp</button><button class="btn" data-act="exportSchool">Xuất tất cả lớp của trường</button></div>' +
-    '<div id="exportMsg" class="small muted" style="margin-top:8px"></div></section>' +
-    '<div class="sheet sum"><table><thead><tr><th>#</th><th>Học sinh</th>' + comps.map(c => '<th>' + esc(c.name) + '</th>').join('') + '<th>Buổi đủ điểm</th><th>Nhận xét cuối kỳ</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+  const idx = SS.indexOf(st);
+  const field = (k, label, ph) => '<label class="field"><span>' + label + '</span><textarea data-auto data-act="fin" data-k="' + k + '" id="fin-' + k + '-' + st.id + '" rows="3" placeholder="' + ph + '"' + ro + '>' + esc(fin[k] || '') + '</textarea></label>';
+  const E = S.ui.expMode;
+  const expPanel = '<div class="row" style="margin-top:12px"><span class="small muted">Xuất Excel:</span>' +
+    '<label class="radio"><input type="radio" name="expMode" data-act="expMode" value="approved"' + (E === 'approved' ? ' checked' : '') + '> Bản đã duyệt (' + cnt.approved + '/' + SS.length + ' học sinh, có chữ ký)</label>' +
+    '<label class="radio"><input type="radio" name="expMode" data-act="expMode" value="draft"' + (E === 'draft' ? ' checked' : '') + '> Bản nháp (mọi học sinh, có dấu nháp, không chữ ký)</label>' +
+    '<span class="grow"></span><button class="btn pri" data-act="exportClass">Xuất cả lớp</button><button class="btn" data-act="exportSchool">Xuất tất cả lớp của trường</button></div>' +
+    '<div id="exportMsg" class="small muted" style="margin-top:8px"></div>';
+
+  // Report status and actions for the selected student.
+  const H = fin.history || [];
+  const last = act => [...H].reverse().find(h => h.act === act);
+  let stBox = '<div class="row">' + repPill(fin) + (ss.done ? '<span class="pill ok">Đã xong</span>' : '<span class="pill warn">Chưa xong</span>') + '<span class="grow"></span>';
+  if (rs === 'draft' || rs === 'returned') stBox += '<button class="btn rose" data-act="submitReport">Gửi duyệt report</button>';
+  if (rs === 'submitted') stBox += '<button class="btn" data-act="withdrawReport">Rút lại để sửa</button>' + (isStaff() ? '<button class="btn pri" data-act="approveOne">Duyệt</button><button class="btn" data-act="returnOne">Trả lại…</button>' : '');
+  if (rs === 'approved') stBox += '<button class="btn" data-act="reopenReport">Sửa lại (tạo phiên bản ' + (repVersion(fin) + 1) + ')</button>';
+  stBox += '</div>';
+  if (!ss.done) stBox += '<div class="small">Chưa xong vì ' + esc(ss.why.join('; ')) + '. Vẫn gửi duyệt và xuất được.</div>';
+  if (rs === 'returned' && fin.returned) stBox += '<div class="note-box">Bị trả lại bởi ' + esc(fin.returned.by) + ' lúc ' + esc(fmtWhen(fin.returned.at)) + '. Lý do: <b>' + esc(fin.returned.reason) + '</b></div>';
+  if (rs === 'submitted') stBox += '<div class="small muted">Đã gửi duyệt' + (last('submit') ? ' bởi ' + esc(last('submit').by) + ' lúc ' + esc(fmtWhen(last('submit').at)) : '') + '. Đang chờ duyệt nên các ô nhận xét bị khóa.</div>';
+  if (rs === 'approved' && fin.approved) stBox += '<div class="small muted">Đã duyệt phiên bản ' + fin.approved.version + ' bởi ' + esc(fin.approved.by) + ' lúc ' + esc(fmtWhen(fin.approved.at)) + '. File "bản đã duyệt" in đúng bản chụp lúc duyệt.</div>';
+  if (rs === 'draft' && fin.reopened) stBox += '<div class="note-box">' + esc(fin.reopened) + '</div>';
+  if (rs === 'draft' && fin.approved) stBox += '<div class="small muted">Bản đã duyệt gần nhất (phiên bản ' + fin.approved.version + ') vẫn được dùng khi xuất "bản đã duyệt" cho tới khi phiên bản mới được duyệt.</div>';
+  const ACT = { submit: 'Gửi duyệt', withdraw: 'Rút lại', approve: 'Duyệt', return: 'Trả lại', reopen: 'Mở lại để sửa', 'auto-reopen': 'Tự về nháp vì điểm đổi' };
+  if (H.length) stBox += '<details><summary class="small">Lịch sử report (' + H.length + ')</summary><ul class="hist">' + H.slice().reverse().map(h => '<li>' + esc(fmtWhen(h.at)) + ' · ' + esc(ACT[h.act] || h.act) + (h.version ? ' v' + h.version : '') + ' · ' + esc(h.by) + (h.reason ? ' · "' + esc(h.reason) + '"' : '') + '</li>').join('') + '</ul></details>';
+
+  return '<section class="panel"><div class="row"><div class="grow"><h2>Tổng hợp lớp ' + esc(klass()?.name) + '</h2><div class="muted small">Đầu kỳ = buổi đầu tiên · Cuối kỳ = trung bình ' + nL + ' buổi sau đó' + (nCancel ? ' (không tính ' + nCancel + ' buổi đã hủy)' : '') + ', bỏ qua buổi vắng, chưa rõ và ô trống.</div>' +
+    '<div class="small" style="margin-top:4px">Đã xong ' + cnt.done + '/' + SS.length + ' · Chờ duyệt ' + cnt.submitted + ' · Đã duyệt ' + cnt.approved + (cnt.returned ? ' · Bị trả lại ' + cnt.returned : '') + '</div>' +
+    (gone ? '<div class="muted small">' + gone + ' học sinh đã chuyển lớp hoặc thôi học không có trong tổng hợp và báo cáo của lớp này.</div>' : '') + '</div></div>' +
+    expPanel + '</section>' +
+    '<div class="sheet sum"><table><thead><tr><th>#</th><th>Học sinh</th>' + comps.map(c => '<th>' + esc(c.name) + '</th>').join('') + '<th>Buổi đủ điểm</th><th>Tình trạng</th><th>Report</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(st.name) + '</h2><div class="muted small">' + esc(st.code || '') + ' · ' + esc(klass()?.name) + ' · ' + esc(school()?.name) + '</div></div>' +
-    '<button class="btn" data-act="prevStudent"' + (idx === 0 ? ' disabled' : '') + '>← Học sinh trước</button><button class="btn" data-act="nextStudent"' + (idx === S.students.length - 1 ? ' disabled' : '') + '>Học sinh sau →</button>' +
-    '<button class="btn rose" data-act="exportOne">Xuất Excel học sinh này</button></div>' +
-    '<div class="detail" style="margin-top:14px"><div><div class="radar" id="radar"></div><div class="legend"><span><i style="background:var(--base)"></i>Đầu kỳ (buổi 1)</span><span><i style="background:var(--leaf)"></i>Cuối kỳ (TB buổi 2–' + S.lessons.length + ')</span></div>' +
-    '<dl class="kv" style="margin-top:12px">' + comps.map(c => '<dt>' + esc(c.name) + '</dt><dd>' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b> <span class="muted small">(' + stats.count[c.code] + '/' + nL + ' buổi)</span></dd>').join('') + '</dl></div>' +
+    '<button class="btn" data-act="prevStudent"' + (idx === 0 ? ' disabled' : '') + '>← Học sinh trước</button><button class="btn" data-act="nextStudent"' + (idx === SS.length - 1 ? ' disabled' : '') + '>Học sinh sau →</button>' +
+    '<button class="btn" data-act="exportOne">Xuất Excel học sinh này</button></div>' +
+    '<div class="status-box" style="margin-top:12px">' + stBox + '</div>' +
+    '<div class="detail" style="margin-top:14px"><div><div class="radar" id="radar"></div><div class="legend"><span><i style="background:var(--base)"></i>Đầu kỳ</span><span><i style="background:var(--leaf)"></i>Cuối kỳ (trung bình ' + nL + ' buổi)</span></div>' +
+    '<dl class="kv" style="margin-top:12px">' + comps.map(c => '<dt>' + esc(c.name) + '</dt><dd>' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b> <span class="muted small">(n = ' + stats.count[c.code] + '/' + nL + ' buổi)</span></dd>').join('') + '</dl></div>' +
     '<div style="display:grid;gap:12px;min-width:0"><div class="fields">' +
     field('general', 'Nhận xét chung', 'Ví dụ: Bạn năng nổ trong học tập…') + field('positive', 'Điểm tích cực', 'Điều học sinh làm tốt…') +
     field('develop', 'Nội dung cần phát triển', 'Điều học sinh có thể làm tốt hơn…') + field('suggest', 'Đề xuất phát triển', 'Gợi ý cho học kỳ tới…') + '</div>' +
+    (frozen ? '' : finPicker(st, stats, comps, sc, fin)) +
     (g.warnings.length ? '<div class="note-box">' + g.warnings.map(esc).join('<br>') + '</div>' : '') +
-    '<label class="field"><span>Đoạn nhận xét in trên báo cáo ' + (fin.textEdited ? '<span class="pill">Đã sửa tay</span> <button class="btn ghost small" data-act="resetText">Tạo lại từ dữ liệu</button>' : '<span class="pill ok">Tự tạo từ điểm và nhận xét</span>') + '</span>' +
-    '<textarea class="final-text" data-auto data-act="finalText" id="final-' + st.id + '">' + esc(finalText) + '</textarea></label>' +
+    '<label class="field"><span>Đoạn nhận xét in trên báo cáo ' + (fin.textEdited ? '<span class="pill">Đã sửa tay</span>' + (frozen ? '' : ' <button class="btn ghost small" data-act="resetText">Tạo lại từ dữ liệu</button>') : '<span class="pill ok">Tự tạo từ điểm và nhận xét</span>') + '</span>' +
+    '<textarea class="final-text" data-auto data-act="finalText" id="final-' + st.id + '"' + ro + '>' + esc(rs === 'approved' && fin.approved ? fin.approved.report.comment : finalText) + '</textarea></label>' +
     '<p class="muted small" style="margin:0">Sửa trực tiếp đoạn trên nếu cần. Khi đã sửa tay, đoạn văn không tự cập nhật theo điểm nữa cho đến khi bấm "Tạo lại từ dữ liệu".</p></div></div></section>';
 }
+// Library suggestions for "Nhận xét chung" (final) and "Đề xuất phát triển" (suggest), at the student's average end-of-term level.
+const FIN_PICK = { general: ['final', 'Nhận xét chung'], suggest: ['suggest', 'Đề xuất phát triển'] };
+function avgLevel(stats, comps, sc) {
+  const v = comps.map(c => stats.final[c.code]).filter(x => x != null);
+  return v.length ? levelOf(v.reduce((a, b) => a + b, 0) / v.length, maxLevel(sc)) : null;
+}
+function finPicker(st, stats, comps, sc, fin) {
+  const keys = Object.keys(FIN_PICK).filter(f => libComments(FIN_PICK[f][0]).length);
+  if (!keys.length) return '';
+  const lv = avgLevel(stats, comps, sc), f = keys.includes(S.ui.finPick) ? S.ui.finPick : '';
+  let h = '<div class="row"><span class="small muted">Gợi ý từ thư viện' + (lv ? ' (cấp trung bình cuối kỳ: ' + lv + ')' : '') + ':</span>' +
+    keys.map(k => '<button class="btn small' + (f === k ? ' pri' : '') + '" data-act="finPick" data-k="' + k + '" aria-expanded="' + (f === k) + '">' + FIN_PICK[k][1] + '</button>').join('') + '</div>';
+  if (!f) return h;
+  const cur = fin[f] || '';
+  const list = libComments(FIN_PICK[f][0]).filter(c => S.ui.finAll || !lv || c.level === lv);
+  const used = c => S.students.filter(s => s.id !== st.id && noteHas(S.records[s.id]?.fin?.[f] || '', c.text)).length;
+  return h + '<div class="picker"><div class="row"><b class="small grow">Chèn vào ô "' + FIN_PICK[f][1] + '"</b><label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="finAll"' + (S.ui.finAll ? ' checked' : '') + '> Hiện mọi cấp</label></div>' +
+    '<div class="picks">' + list.slice(0, 80).map(c => { const on = noteHas(cur, c.text), u = used(c); return '<button class="pick' + (on ? ' on' : '') + '" data-act="finPickText" data-cid="' + c.id + '" aria-pressed="' + on + '">' + (on ? '✓ ' : '+ ') + esc(c.text) +
+      '<small>cấp ' + c.level + (u ? ' · đã dùng cho ' + u + ' bạn cùng lớp' : '') + (on ? ' · bấm để gỡ' : '') + '</small></button>'; }).join('') + '</div>' +
+    '<div class="small muted">Nên chọn câu khác nhau giữa các học sinh cùng lớp, rồi sửa lại cho đúng với từng bạn.</div></div>';
+}
+// Add a sentence to a text, or take it out again if it is already there.
+function toggleSentence(text, s) {
+  if (noteHas(text, s)) return text.replace(s, '').replace(/[ \t]*\n[ \t]*\n+/g, '\n').replace(/^\s+|\s+$/g, '');
+  return (text.trim() ? text.trim() + '\n' : '') + s;
+}
+
 function drawRadar() {
   const el = $('#radar'); if (!el) return;
   const sc = school(), comps = activeComps(sc), max = maxLevel(sc);
@@ -673,17 +1099,112 @@ function drawRadar() {
   el.innerHTML = s + '</svg>';
 }
 
+// ---------- report workflow: submit, approve, return ----------
+// An item is { cls, sch, sem, st, lessons, rec }; rec is mutated locally after a successful write.
+async function approveItems(items) {
+  const res = [];
+  for (const it of items) {
+    const rep = reportOf(it.st, it.lessons, it.rec, it.sch, it.sem);
+    const serious = rep.warnings.filter(isSerious);
+    // Decision: a missing rubric description blocks approval; other gaps only warn. One bad item never stops the batch.
+    if (serious.length) { res.push({ name: it.st.name, ok: false, why: serious[0] }); continue; }
+    delete rep.warnings;
+    const fin = it.rec?.fin || {}, version = repVersion(fin);
+    const patch = { fin: { status: 'approved', returned: null, reopened: '', approved: { version, ...stamp(), report: rep }, history: [...(fin.history || []), { act: 'approve', version, ...stamp() }] } };
+    try {
+      await write(() => Store.update('records', recId(it.cls.id, it.st.id), patch));
+      mergeLocal(it.rec, patch); res.push({ name: it.st.name, ok: true });
+    } catch (e) { res.push({ name: it.st.name, ok: false, why: 'lưu lỗi' }); }
+  }
+  return res;
+}
+async function returnItems(items, reason) {
+  let n = 0;
+  for (const it of items) {
+    const fin = it.rec?.fin || {};
+    const patch = { fin: { status: 'returned', returned: { reason, ...stamp() }, history: [...(fin.history || []), { act: 'return', reason, version: repVersion(fin), ...stamp() }] } };
+    try { await write(() => Store.update('records', recId(it.cls.id, it.st.id), patch)); mergeLocal(it.rec, patch); n++; } catch {}
+  }
+  return n;
+}
+const curItem = () => { const st = S.students.find(s => s.id === S.sel.student); return { cls: klass(), sch: school(), sem: semester(), st, lessons: S.lessons, rec: S.records[st.id] }; };
+function finStep(act, patchFin) {
+  const st = S.sel.student, fin = S.records[st]?.fin || {};
+  flushNote(st);
+  return patchRecord(st, { fin: { ...patchFin, history: [...(fin.history || []), { act, version: patchFin.version || repVersion(fin), ...stamp() }] } });
+}
+
+// ---------- view: Duyệt report (staff) ----------
+const Rev = { key: '', loading: false, items: [], err: '', msg: '', cls: '', sel: new Set() };
+const revKey = it => it.cls.id + '__' + it.st.id;
+async function loadReview() {
+  const sem = semester(); if (!sem) return;
+  Rev.loading = true; Rev.key = sem.id; Rev.err = '';
+  try {
+    const items = [];
+    for (const cls of S.classes.filter(c => c.semesterId === sem.id)) {
+      const sch = S.schools.find(x => x.id === cls.schoolId);
+      const [students, lessons, recs] = await Promise.all([Store.list('students', 'classId', cls.id), Store.list('lessons', 'classId', cls.id), Store.list('records', 'classId', cls.id)]);
+      students.sort(byOrder); lessons.sort((a, b) => a.order - b.order);
+      knowStudents(students); await loadHist(students);
+      const byStu = Object.fromEntries(recs.map(r => [r.studentId, r]));
+      for (const st of students) {
+        const rec = byStu[st.id];
+        if (!reportable(st) || repStatus(rec?.fin) !== 'submitted') continue;
+        const rep = reportOf(st, lessons, rec, sch, sem);
+        const stats = studentStats(st.id, lessons, rec, activeComps(sch));
+        items.push({ cls, sch, sem, st, lessons, rec, warnings: rep.warnings, serious: rep.warnings.filter(isSerious), status: studentStatus(stats, activeComps(sch), rec.fin) });
+      }
+    }
+    Rev.items = items; Rev.sel = new Set([...Rev.sel].filter(k => items.some(i => revKey(i) === k)));
+  } catch (e) { Rev.err = e?.message || String(e); }
+  Rev.loading = false; render(true);
+}
+function viewDuyet() {
+  if (!isStaff()) return '<div class="empty"><b>Chỉ quản lý chuyên môn duyệt report</b>Giáo viên gửi duyệt ở tab Tổng hợp.</div>';
+  const sem = semester();
+  if (!sem) return '<div class="empty"><b>Chưa có học kỳ</b>Vào Danh mục để tạo học kỳ.</div>';
+  if (Rev.key !== sem.id && !Rev.loading) loadReview();
+  if (Rev.loading || Rev.key !== sem.id) return '<div class="empty"><b>Đang tải danh sách chờ duyệt…</b></div>';
+  if (Rev.err) return '<div class="empty"><b>Không tải được danh sách</b>' + esc(Rev.err) + '</div>';
+  const classes = [...new Map(Rev.items.map(i => [i.cls.id, i.cls])).values()];
+  if (Rev.cls && !classes.some(c => c.id === Rev.cls)) Rev.cls = '';
+  const shown = Rev.items.filter(i => !Rev.cls || i.cls.id === Rev.cls);
+  const nSel = shown.filter(i => Rev.sel.has(revKey(i))).length;
+  const sub = it => [...(it.rec.fin.history || [])].reverse().find(h => h.act === 'submit');
+  const rows = shown.map(it => {
+    const k = revKey(it), s = sub(it);
+    const check = it.serious.length ? '<span class="pill bad" title="' + esc(it.serious.join(' ')) + '">Thiếu mô tả cấp độ: chưa duyệt được</span>'
+      : it.warnings.length || !it.status.done ? '<span class="pill warn" title="' + esc(it.warnings.concat(it.status.why).join(' ')) + '">Cảnh báo: ' + esc((it.status.why[0] || it.warnings[0] || '').slice(0, 60)) + '</span>'
+      : '<span class="pill ok">Đủ dữ liệu</span>';
+    return '<tr><td><input type="checkbox" data-act="revPick" data-k="' + esc(k) + '"' + (Rev.sel.has(k) ? ' checked' : '') + (it.serious.length ? ' disabled' : '') + ' aria-label="Chọn ' + esc(it.st.name) + '"></td>' +
+      '<td><b>' + esc(it.st.name) + '</b><div class="muted small">' + esc(it.st.code || '') + (repVersion(it.rec.fin) > 1 ? ' · phiên bản ' + repVersion(it.rec.fin) : '') + '</div></td>' +
+      '<td>' + esc(it.cls.name) + '<div class="muted small">' + esc(it.sch?.name || '') + '</div></td>' +
+      '<td class="small">' + (s ? esc(s.by) + '<div class="muted">' + esc(fmtWhen(s.at)) + '</div>' : '') + '</td>' +
+      '<td>' + check + '</td><td><button class="btn" data-act="revView" data-k="' + esc(k) + '">Xem</button></td></tr>';
+  }).join('');
+  return '<section class="panel"><div class="row"><div class="grow"><h2>Duyệt report cuối kỳ · ' + esc(sem.name + ' ' + sem.year) + '</h2>' +
+    '<div class="muted small">Chỉ report cuối kỳ cần duyệt; buổi học không cần duyệt. Khi duyệt, hệ thống chụp lại report để in đúng bản đó. Sửa điểm sau khi duyệt sẽ tạo phiên bản mới và cần duyệt lại.</div></div>' +
+    '<label class="field" style="min-width:180px"><span>Lớp</span><select id="revCls" data-act="revCls"><option value="">Tất cả lớp (' + Rev.items.length + ')</option>' + classes.map(c => '<option value="' + c.id + '"' + (c.id === Rev.cls ? ' selected' : '') + '>' + esc(c.name) + ' (' + Rev.items.filter(i => i.cls.id === c.id).length + ')</option>').join('') + '</select></label>' +
+    '<button class="btn" data-act="revReload">Tải lại</button></div></section>' +
+    (Rev.msg ? '<div class="note-box">' + Rev.msg + '</div>' : '') +
+    (shown.length ? '<div class="sheet rev"><table><thead><tr><th></th><th>Học sinh</th><th>Lớp</th><th>Gửi bởi</th><th>Kiểm tra</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<section class="panel"><div class="row"><span class="small">Đã chọn ' + nSel + '</span><button class="btn" data-act="revAll">Chọn mọi mục duyệt được</button><span class="grow"></span>' +
+      '<button class="btn" data-act="revReturn"' + (nSel ? '' : ' disabled') + '>Trả lại…</button><button class="btn pri" data-act="revApprove"' + (nSel ? '' : ' disabled') + '>Duyệt mục đã chọn</button></div></section>'
+      : '<div class="empty"><b>Không có report nào đang chờ duyệt</b>Giáo viên bấm "Gửi duyệt report" ở tab Tổng hợp thì report sẽ hiện ở đây.</div>');
+}
+
 // ---------- export ----------
-function exportData(cls, sch, sem, students, lessons, records, onlyStudentId) {
+// mode 'approved': only students with an approved report, printed from the snapshot taken at approval (signed).
+// mode 'draft': every student from live data, marked as draft and unsigned.
+function exportData(cls, sch, sem, students, lessons, records, onlyStudentId, mode) {
   const comps = activeComps(sch), set = settings(), max = maxLevel(sch);
-  const list = students.filter(s => !onlyStudentId || s.id === onlyStudentId).map(st => {
-    const rec = records[st.id] || {}, stats = studentStats(st.id, lessons, rec, comps), fin = rec.fin || {};
-    const text = fin.textEdited ? (fin.text || '') : genComment(st, stats, sch, sem, fin).text;
-    return {
-      name: st.name, comment: text, baseline: stats.baseline, final: stats.final,
-      rows: lessons.map(l => { const e = rec.s?.[l.id] || {}; const sc = {}; comps.forEach(c => { if (typeof e[c.code] === 'number') sc[c.code] = e[c.code]; }); return { date: l.date, project: l.project, note: e.note || '', absent: !!e.absent, scores: sc }; }),
-    };
-  });
+  const list = [];
+  for (const st of students.filter(s => reportable(s) && (!onlyStudentId || s.id === onlyStudentId))) {
+    const rec = records[st.id] || {};
+    if (mode === 'approved') { const a = rec.fin?.approved; if (a?.report) list.push({ ...a.report, draft: false, version: a.version }); }
+    else list.push({ ...reportOf(st, lessons, rec, sch, sem), draft: true });
+  }
   return {
     title: set.title, semesterLabel: (sem.name + ' - NĂM HỌC ' + sem.year).toUpperCase(), semesterShort: sem.name,
     schoolName: sch.name, className: cls.name, comps, maxLevel: max, totalLabel: set.totalLabel,
@@ -708,35 +1229,50 @@ async function saveFile(filename, buf) {
 async function runExport(kind) {
   const msg = $('#exportMsg');
   if (!window.ExcelJS || !window.JSZip) { if (msg) msg.textContent = 'Chưa tải xong thư viện Excel. Đợi vài giây rồi thử lại.'; return; }
-  const sch = school(), sem = semester();
+  const sch = school(), sem = semester(), mode = S.ui.expMode === 'draft' ? 'draft' : 'approved';
+  const tag = mode === 'draft' ? '_NHAP' : '';
+  const base = cls => 'Arkki_' + fileSafe(sch.name) + '_' + fileSafe(sem.name) + '_' + fileSafe(sem.year) + '_' + fileSafe(cls.name);
+  const notes = [];
+  // One class -> one workbook (one sheet per student). In approved mode, unapproved students are skipped and listed.
+  const one = async (cls, students, lessons, records, onlyId, name) => {
+    const data = exportData(cls, sch, sem, students, lessons, records, onlyId, mode);
+    const total = onlyId ? 1 : students.filter(reportable).length;
+    if (!data.students.length) { notes.push(cls.name + ': chưa có report nào được duyệt'); return 0; }
+    if (data.students.length < total) notes.push(cls.name + ': ' + (total - data.students.length) + ' học sinh chưa được duyệt nên không có trong file');
+    await saveFile(name + '.xlsx', await ArkkiExport.build(data));
+    return data.students.length;
+  };
   try {
+    let n = 0;
     if (kind === 'school') {
-      const classes = S.classes.filter(c => c.schoolId === sch.id && c.semesterId === sem.id);
+      const classes = visClasses().filter(c => c.schoolId === sch.id && c.semesterId === sem.id);
       for (const cls of classes) {
         if (msg) msg.textContent = 'Đang tạo file lớp ' + cls.name + '…';
         const [students, lessons, recs] = await Promise.all([Store.list('students', 'classId', cls.id), Store.list('lessons', 'classId', cls.id), Store.list('records', 'classId', cls.id)]);
         students.sort(byOrder); lessons.sort((a, b) => a.order - b.order);
-        const records = Object.fromEntries(recs.map(r => [r.studentId, r]));
-        const buf = await ArkkiExport.build(exportData(cls, sch, sem, students, lessons, records));
-        await saveFile('Arkki_' + fileSafe(sch.name) + '_' + fileSafe(sem.name) + '_' + fileSafe(sem.year) + '_' + fileSafe(cls.name) + '.xlsx', buf);
+        knowStudents(students); await loadHist(students);
+        n += await one(cls, students, lessons, Object.fromEntries(recs.map(r => [r.studentId, r])), null, base(cls) + tag);
       }
-      return;
+    } else {
+      if (msg) msg.textContent = 'Đang tạo file…';
+      const cls = klass();
+      if (kind === 'one') {
+        const st = S.students.find(s => s.id === S.sel.student), fin = S.records[st.id]?.fin || {};
+        const ver = mode === 'approved' ? fin.approved?.version : repVersion(fin);
+        n = await one(cls, S.students, S.lessons, S.records, st.id, base(cls) + '_' + fileSafe(st.name) + (st.code ? '_' + fileSafe(st.code) : '') + (ver ? '_v' + ver : '') + tag);
+      } else n = await one(cls, S.students, S.lessons, S.records, null, base(cls) + tag);
     }
-    if (msg) msg.textContent = 'Đang tạo file…';
-    const cls = klass();
-    const one = kind === 'one' ? S.sel.student : null;
-    const buf = await ArkkiExport.build(exportData(cls, sch, sem, S.students, S.lessons, S.records, one));
-    const stName = one ? '_' + fileSafe(S.students.find(s => s.id === one)?.name) : '';
-    await saveFile('Arkki_' + fileSafe(sch.name) + '_' + fileSafe(sem.name) + '_' + fileSafe(sem.year) + '_' + fileSafe(cls.name) + stName + '.xlsx', buf);
+    if (msg) msg.textContent = (n ? 'Đã xuất ' + n + ' report' + (mode === 'draft' ? ' bản nháp' : ' đã duyệt') + '. ' : 'Không có file nào được tạo. ') +
+      (notes.length ? notes.join('; ') + (mode === 'approved' ? '. Chọn "Bản nháp" nếu cần in thử.' : '.') : '');
   } catch (e) { console.error(e); if (msg) msg.textContent = 'Xuất file lỗi: ' + (e?.message || e); }
 }
 
 // ---------- view: Danh mục ----------
 function viewDanhMuc() {
-  const tabs = [['hocky', 'Năm học & học kỳ'], ['truong', 'Trường & tiêu chí'], ['lop', 'Lớp'], ['hocsinh', 'Học sinh'], ['baihoc', 'Bài học']].concat(Store.mode === 'supabase' ? [['giaovien', 'Giáo viên & phân công']] : []);
+  const tabs = [['hocky', 'Năm học & học kỳ'], ['truong', 'Trường & tiêu chí'], ['lop', 'Lớp'], ['hocsinh', 'Học sinh'], ['thuvien', 'Thư viện bài học'], ['baihoc', 'Lịch buổi học'], ['giaovien', 'Giáo viên & phân công']];
   if (!tabs.some(t => t[0] === S.sel.catTab)) S.sel.catTab = 'hocsinh';
   const sub = '<div class="subtabs">' + tabs.map(([k, l]) => '<button data-act="catTab" data-k="' + k + '" aria-pressed="' + (S.sel.catTab === k) + '">' + l + '</button>').join('') + '</div>';
-  const body = { hocky: catHocKy, truong: catTruong, lop: catLop, hocsinh: catHocSinh, baihoc: catBaiHoc, giaovien: catGiaoVien }[S.sel.catTab]();
+  const body = { hocky: catHocKy, truong: catTruong, lop: catLop, hocsinh: catHocSinh, thuvien: catThuVien, baihoc: catBaiHoc, giaovien: Store.mode === 'supabase' ? catGiaoVien : catPhanCong }[S.sel.catTab]();
   return '<section class="panel" style="display:grid;gap:14px"><div class="row"><h2 class="grow">Danh mục</h2>' + (S.canWrite ? '' : '<span class="pill warn">Chỉ xem</span>') + '</div>' + sub + '</section>' + body;
 }
 function catHocKy() {
@@ -782,34 +1318,466 @@ function catLop() {
     (others.length ? '<div class="row"><span class="small muted">Tạo lớp mới bằng cách chép học sinh từ lớp ở học kỳ khác:</span><select id="copyFrom" style="max-width:280px">' + others.map(c => { const s = S.semesters.find(x => x.id === c.semesterId); return '<option value="' + c.id + '">' + esc(c.name) + ' · ' + esc(s ? s.name + ' ' + s.year : '') + '</option>'; }).join('') + '</select><button class="btn" data-act="copyClass">Chép sang học kỳ này</button></div>' : '') +
     '<p class="muted small" style="margin:0">Xóa lớp sẽ xóa luôn học sinh, bài học và điểm của lớp đó.</p></section>';
 }
+// ---------- transfers, leaving, and the history of one child across classes and terms ----------
+function movePanel(st) {
+  const F = S.ui.mv || (S.ui.mv = {}), kind = F.kind || 'move', cls = klass();
+  const targets = S.classes.filter(c => c.semesterId === cls.semesterId && c.id !== cls.id);
+  const sn = id => S.schools.find(x => x.id === id)?.name || '';
+  const date = F.date || todayStr(), to = targets.find(c => c.id === F.to);
+  return '<div class="picker" style="background:var(--surface)"><b class="small">' + esc(st.name) + ' · ' + esc(cls.name) + '</b>' +
+    '<div class="row"><label class="radio"><input type="radio" name="mvkind" data-act="mv" data-k="kind" value="move"' + (kind === 'move' ? ' checked' : '') + '> Chuyển sang lớp khác</label>' +
+    '<label class="radio"><input type="radio" name="mvkind" data-act="mv" data-k="kind" value="leave"' + (kind === 'leave' ? ' checked' : '') + '> Thôi học</label></div>' +
+    '<div class="row">' + (kind === 'move' ? '<label class="field"><span>Lớp mới (cùng học kỳ)</span><select id="mv-to" data-act="mv" data-k="to"><option value="">— chọn lớp —</option>' +
+      targets.map(c => '<option value="' + c.id + '"' + (c.id === F.to ? ' selected' : '') + '>' + esc(c.name + (c.schoolId !== cls.schoolId ? ' · ' + sn(c.schoolId) : '')) + '</option>').join('') + '</select></label>' : '') +
+    '<label class="field"><span>' + (kind === 'move' ? 'Học ở lớp mới từ ngày' : 'Thôi học từ ngày') + '</span><input type="date" id="mv-date" data-act="mv" data-k="date" value="' + esc(date) + '"></label>' +
+    '<label class="field" style="flex:1 1 200px"><span>Lý do</span><input type="text" id="mv-reason" data-act="mv" data-k="reason" value="' + esc(F.reason || '') + '" placeholder="' + (kind === 'move' ? 'Ví dụ: đổi ca học' : 'Ví dụ: chuyển trường') + '"></label></div>' +
+    '<div class="small">' + (kind === 'move'
+      ? 'Từ ngày ' + esc(fmtDate(date)) + ', học sinh có tên trong lớp ' + esc(to?.name || 'mới') + '. Điểm, điểm danh và nhận xét các buổi trước ngày này ở lớp ' + esc(cls.name) + ' được giữ nguyên và được tính vào báo cáo cuối kỳ ở lớp mới (buổi đầu tiên ở lớp cũ vẫn là mốc đầu kỳ). Ở lớp ' + esc(cls.name) + ', học sinh không còn trong danh sách chấm từ ngày này và không có báo cáo riêng. Nhận xét cuối kỳ do giáo viên lớp mới viết.'
+      : 'Từ ngày ' + esc(fmtDate(date)) + ', học sinh không còn trong danh sách chấm và báo cáo của lớp. Điểm các buổi trước được giữ; bấm "Học lại" để đưa học sinh về lớp.') + '</div>' +
+    '<div class="row"><button class="btn pri" data-act="stMoveOk" data-id="' + st.id + '">' + (kind === 'move' ? 'Chuyển lớp' : 'Xác nhận thôi học') + '</button><button class="btn" data-act="stMoveCancel">Thôi</button><span class="small" id="mvMsg" style="color:var(--bad)"></span></div></div>';
+}
+function histPanel(st) {
+  const H = S.ui.histData;
+  if (!H || H.id !== st.id) { loadPersonHistory(st).then(h => { S.ui.histData = h; render(true); }); return '<div class="picker small">Đang tìm các lớp học sinh đã học…</div>'; }
+  const semIdx = id => { const i = S.semesters.findIndex(s => s.id === id); return i < 0 ? 999 : i; };
+  const rows = H.list.map(({ x, sure }) => ({ x, sure, c: S.classes.find(c => c.id === x.classId) }))
+    .sort((a, b) => semIdx(b.c?.semesterId) - semIdx(a.c?.semesterId) || String(a.x.joinedAt || '').localeCompare(String(b.x.joinedAt || '')));
+  const when = x => x.status === 'moved' ? (x.joinedAt ? 'từ ' + fmtD(x.joinedAt) + ' ' : '') + 'đến ' + fmtD(x.leftAt) + ', chuyển sang ' + (S.classes.find(c => c.id === x.movedTo?.classId)?.name || 'lớp khác')
+    : x.status === 'left' ? 'thôi học từ ' + fmtD(x.leftAt) : x.joinedAt ? 'từ ' + fmtD(x.joinedAt) : 'cả học kỳ';
+  return '<div class="picker" style="background:var(--surface)"><b class="small">Học tịch · ' + esc(st.name) + '</b>' +
+    '<div style="overflow-x:auto"><table class="small" style="min-width:0"><tbody>' + rows.map(({ x, sure, c }) => { const sem = S.semesters.find(s => s.id === c?.semesterId);
+      return '<tr><td>' + esc(sem ? sem.name + ' ' + sem.year : '') + '</td><td>' + esc(S.schools.find(s => s.id === c?.schoolId)?.name || '') + '</td><td><b>' + esc(c?.name || '') + '</b>' + (x.id === st.id ? ' <span class="muted">(đang xem)</span>' : '') + '</td><td>' + esc(when(x)) + (sure ? '' : ' <span class="pill warn">Cùng mã ' + esc(x.code) + ', chưa chắc cùng học sinh</span>') + '</td>' +
+        '<td>' + (x.id === st.id ? '' : '<button class="btn small" data-act="histOpen" data-id="' + x.id + '" data-cls="' + x.classId + '">Mở</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+    '<div class="small muted">Các lớp được nối với nhau khi chép lớp sang học kỳ mới hoặc chuyển lớp. Học sinh cùng mã ở cùng trường được liệt kê thêm để đối chiếu.</div></div>';
+}
+async function loadPersonHistory(st) {
+  const all = knowStudents(await Store.list('students'));
+  const pid = st.personId || st.id, schoolOf = x => S.classes.find(c => c.id === x.classId)?.schoolId;
+  const mine = all.filter(x => (x.personId || x.id) === pid || x.id === pid);
+  const byCode = st.code ? all.filter(x => !mine.includes(x) && x.code && fold(x.code) === fold(st.code) && schoolOf(x) === schoolOf(st)) : [];
+  return { id: st.id, list: mine.map(x => ({ x, sure: true })).concat(byCode.map(x => ({ x, sure: false }))) };
+}
+const hasData = r => !!r && (Object.values(r.s || {}).some(e => e && Object.entries(e).some(([k, v]) => !['by', 'at'].includes(k) && v !== null && v !== '' && v !== false)) ||
+  ['general', 'positive', 'develop', 'suggest', 'text'].some(k => String(r.fin?.[k] || '').trim()));
+async function moveStudent(st, F) {
+  const cls = klass(), date = F.date || todayStr(), pid = st.personId || st.id;
+  if (st.joinedAt && date < st.joinedAt) throw new Error('Ngày chuyển phải sau ngày học sinh vào lớp này (' + fmtDate(st.joinedAt) + ').');
+  if (F.kind === 'leave') { await write(() => Store.update('students', st.id, { status: 'left', leftAt: date, leftReason: F.reason || '', leftBy: stamp() })); return 'Đã ghi ' + st.name + ' thôi học từ ' + fmtDate(date); }
+  const to = S.classes.find(c => c.id === F.to); if (!to) throw new Error('Chọn lớp mới.');
+  const there = await Store.list('students', 'classId', to.id);
+  if (there.some(x => reportable(x) && (x.personId || x.id) === pid)) throw new Error('Học sinh này đã có trong lớp ' + to.name + '.');
+  const newId = uid();
+  await write(async () => {
+    await Store.set('students', newId, { classId: to.id, name: st.name, code: st.code || '', dob: st.dob || '', order: there.length + 1, personId: pid, joinedAt: date, movedFrom: { classId: cls.id, studentId: st.id, at: date } });
+    await Store.set('records', recId(to.id, newId), { classId: to.id, studentId: newId, s: {}, fin: {} });
+    await Store.update('students', st.id, { status: 'moved', leftAt: date, personId: pid, movedTo: { classId: to.id, studentId: newId, at: date, reason: F.reason || '', ...stamp() } });
+  });
+  return 'Đã chuyển ' + st.name + ' sang lớp ' + to.name + ' từ ' + fmtDate(date);
+}
+async function undoMove(st) {
+  const to = st.movedTo; if (!to) return '';
+  const rec = (await Store.list('records', 'classId', to.classId)).find(r => r.studentId === to.studentId);
+  if (hasData(rec)) throw new Error('Lớp ' + (S.classes.find(c => c.id === to.classId)?.name || 'mới') + ' đã có điểm hoặc nhận xét của học sinh này nên không hủy được. Nếu cần, hãy chuyển học sinh trở lại bằng "Chuyển lớp".');
+  await write(async () => {
+    await Store.del('records', recId(to.classId, to.studentId)); await Store.del('students', to.studentId);
+    await Store.update('students', st.id, { status: null, leftAt: null, movedTo: null });
+  });
+  return 'Đã hủy chuyển lớp, ' + st.name + ' học lại lớp ' + klass()?.name;
+}
+
 function catHocSinh() {
   const nc = needClass(); if (nc) return nc;
-  const rows = S.students.map((st, i) => '<tr><td class="small muted">' + (i + 1) + '</td><td><input type="text" id="st-n-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="name" value="' + esc(st.name) + '"></td>' +
+  const cn = id => S.classes.find(c => c.id === id)?.name || 'lớp khác';
+  const status = st => st.status === 'moved' ? '<span class="pill">Đã chuyển sang ' + esc(cn(st.movedTo?.classId)) + ' từ ' + esc(fmtD(st.leftAt)) + '</span>'
+    : st.status === 'left' ? '<span class="pill">Thôi học từ ' + esc(fmtD(st.leftAt)) + '</span>'
+    : st.movedFrom ? '<span class="pill blue">Chuyển đến từ ' + esc(cn(st.movedFrom.classId)) + ', ' + esc(fmtD(st.joinedAt)) + '</span>'
+    : st.joinedAt ? '<span class="pill blue">Vào lớp từ ' + esc(fmtD(st.joinedAt)) + '</span>' : '<span class="pill ok">Đang học</span>';
+  const acts = st => (st.status === 'moved' ? '<button class="btn small" data-act="stMoveUndo" data-id="' + st.id + '">Hủy chuyển lớp</button>'
+    : st.status === 'left' ? '<button class="btn small" data-act="stReturn" data-id="' + st.id + '">Học lại</button>'
+    : '<button class="btn small" data-act="stMoveOpen" data-id="' + st.id + '">Chuyển lớp / thôi học…</button>') +
+    '<button class="btn ghost small" data-act="stHist" data-id="' + st.id + '" aria-expanded="' + (S.ui.hist === st.id) + '">Học tịch</button>';
+  const rows = S.students.map((st, i) => '<tr' + (reportable(st) ? '' : ' style="opacity:.6"') + '><td class="small muted">' + (i + 1) + '</td><td><input type="text" id="st-n-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="name" value="' + esc(st.name) + '"></td>' +
     '<td><input type="text" id="st-c-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="code" value="' + esc(st.code || '') + '"></td>' +
     '<td><input type="date" id="st-d-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="dob" value="' + esc(st.dob || '') + '"></td>' +
-    '<td><button class="btn danger" data-act="delStudent" data-id="' + st.id + '">Xóa</button></td></tr>').join('');
-  return '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">Học sinh lớp ' + esc(klass()?.name) + ' (' + S.students.length + ')</h3></div>' +
-    (S.students.length ? '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Họ và tên</th><th>Mã học sinh</th><th>Ngày sinh</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Lớp chưa có học sinh</b>Dán danh sách từ Excel hoặc tải file lên ở dưới.</div>') +
-    '</section><section class="panel" style="display:grid;gap:10px"><h3>Nhập danh sách</h3>' +
-    '<p class="muted small" style="margin:0">Dán từ Excel, mỗi dòng một học sinh, theo cột: <b>Họ và tên</b> | Ngày sinh | Mã học sinh. Cột STT ở đầu và dòng tiêu đề được bỏ qua tự động. Học sinh trùng tên với người đã có sẽ được cập nhật thay vì thêm mới.</p>' +
-    '<textarea id="pasteStudents" rows="6" placeholder="Nguyễn Văn An&#9;12/03/2014&#9;HS-001"></textarea>' +
-    '<div class="row"><button class="btn pri" data-act="importStudents">Thêm vào lớp</button><label class="btn">Tải file Excel…<input type="file" id="fileStudents" accept=".xlsx" hidden></label><span class="small muted" id="importMsg"></span></div></section>';
+    '<td>' + status(st) + '<div class="row" style="margin-top:4px">' + acts(st) + '</div></td>' +
+    '<td><button class="btn danger" data-act="delStudent" data-id="' + st.id + '">Xóa</button></td></tr>' +
+    (S.ui.move === st.id ? '<tr><td colspan="6">' + movePanel(st) + '</td></tr>' : '') +
+    (S.ui.hist === st.id ? '<tr><td colspan="6">' + histPanel(st) + '</td></tr>' : '')).join('');
+  return studentImportPanel() + '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">Học sinh lớp ' + esc(klass()?.name) + ' (' + S.students.length + ')</h3></div>' +
+    (S.students.length ? '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Họ và tên</th><th>Mã học sinh</th><th>Ngày sinh</th><th>Tình trạng</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Lớp chưa có học sinh</b>Dán danh sách từ Excel hoặc tải file lên ở dưới.</div>') +
+    '</section>' +
+    '<section class="panel" style="display:grid;gap:10px"><h3>Thêm học sinh</h3>' +
+    '<p class="muted small" style="margin:0">Dán từ Excel (mỗi dòng một học sinh, có thể kèm dòng tiêu đề) hoặc chọn file. App tự nhận các cột <b>Lớp</b>, <b>Họ và tên</b> (hoặc Họ đệm + Tên), <b>Ngày sinh</b>, <b>Mã học sinh</b>; không có cột Lớp thì học sinh vào lớp ' + esc(klass()?.name) + '. Có cột Lớp thì nhập được nhiều lớp cùng lúc. Bạn xem lại từng dòng rồi mới lưu.</p>' +
+    '<textarea id="pasteStudents" rows="6" placeholder="Lớp&#9;Họ và tên&#9;Ngày sinh&#9;Mã HS&#10;' + esc(klass()?.name || 'Arkki 1') + '&#9;Nguyễn Văn An&#9;12/03/2021&#9;HS001"></textarea>' +
+    '<div class="row"><button class="btn pri" data-act="importStudents">Đọc danh sách</button><label class="btn">Chọn file Excel…<input type="file" id="fileStudents" accept=".xlsx" hidden></label><span class="small" id="importMsg" style="color:var(--bad)"></span></div>' +
+    '<p class="muted small" style="margin:0">Nhập từ ảnh chụp danh sách bằng AI cần máy chủ, sẽ làm khi bật lại bản web.</p></section>';
 }
+// ---------- Thư viện bài học ----------
+function libCommentsPanel(kind, lessonId) {
+  const U = S.ui, max = 4;
+  const all = libComments(kind, lessonId);
+  const list = all.filter(c => (!U.libComp || (U.libComp === '-' ? !c.comp : c.comp === U.libComp)) && (!U.libLevel || c.level === Number(U.libLevel)));
+  const lvCount = [1, 2, 3, 4].map(l => all.filter(c => c.level === l).length).map((n, i) => n ? 'cấp ' + (i + 1) + ': ' + n : '').filter(Boolean).join(' · ');
+  const chips = '<div class="chips"><button data-act="libChipComp" data-v="" aria-pressed="' + !U.libComp + '">Mọi năng lực</button>' + COMPS.map(c => '<button data-act="libChipComp" data-v="' + c.code + '" aria-pressed="' + (U.libComp === c.code) + '">' + esc(c.name) + '</button>').join('') + '<button data-act="libChipComp" data-v="-" aria-pressed="' + (U.libComp === '-') + '">Không gắn năng lực</button></div>' +
+    '<div class="chips"><button data-act="libChipLevel" data-v="" aria-pressed="' + !U.libLevel + '">Mọi cấp</button>' + [1, 2, 3, 4].map(l => '<button data-act="libChipLevel" data-v="' + l + '" aria-pressed="' + (U.libLevel === String(l)) + '">Cấp ' + l + '</button>').join('') + '</div>';
+  const lvSel = (id, v, act) => '<select ' + (act ? 'data-act="libCm" data-id="' + id + '" data-k="level" id="cm-l-' + id + '"' : 'id="newCmLevel"') + '>' + Array.from({ length: max }, (_, i) => '<option value="' + (i + 1) + '"' + (v === i + 1 ? ' selected' : '') + '>Cấp ' + (i + 1) + '</option>').join('') + '</select>';
+  const cpSel = (id, v, act) => '<select ' + (act ? 'data-act="libCm" data-id="' + id + '" data-k="comp" id="cm-c-' + id + '"' : 'id="newCmComp"') + '><option value="">Mọi năng lực</option>' + COMPS.map(c => '<option value="' + c.code + '"' + (v === c.code ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select>';
+  const rows = list.slice(0, 200).map(c => '<tr><td>' + lvSel(c.id, c.level, true) + '</td><td>' + cpSel(c.id, c.comp || '', true) + '</td>' +
+    '<td><textarea data-auto data-act="libCm" data-id="' + c.id + '" data-k="text" id="cm-t-' + c.id + '" rows="2">' + esc(c.text) + '</textarea></td>' +
+    '<td><button class="btn danger" data-act="libDelCm" data-id="' + c.id + '">Xóa</button></td></tr>').join('');
+  return '<div class="field"><span>' + LIB_KIND[kind] + ' (' + all.length + ' câu' + (lvCount ? ': ' + lvCount : '') + ')</span></div>' + chips +
+    (list.length ? '<div style="overflow-x:auto" class="cm"><table><thead><tr><th>Cấp</th><th>Năng lực</th><th>Câu</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' + (list.length > 200 ? '<p class="muted small">Đang hiện 200/' + list.length + ' câu. Lọc theo cấp hoặc năng lực để xem tiếp.</p>' : '')
+      : '<div class="empty"><b>Chưa có câu nào' + (all.length ? ' khớp bộ lọc' : '') + '</b>' + (kind === 'daily' ? 'Bài chưa có câu vẫn dùng được: giáo viên gõ tay khi chấm.' : '') + '</div>') +
+    '<div class="row">' + lvSel('', Number(U.libLevel) || 1, false) + cpSel('', U.libComp && U.libComp !== '-' ? U.libComp : '', false) +
+    '<input type="text" id="newCmText" placeholder="Câu nhận xét mới…" style="flex:1 1 260px"><button class="btn pri" data-act="libAddCm" data-kind="' + kind + '" data-lesson="' + (lessonId || '') + '">Thêm câu</button></div>' +
+    '<details><summary class="small">Dán nhiều câu một lần</summary><p class="muted small">Mỗi dòng một câu, dạng <b>Cấp | Năng lực | Câu</b> hoặc <b>Cấp | Câu</b>. Có thể dán thẳng hai cột Cấp độ và Câu từ Excel.</p>' +
+    '<textarea id="libPaste" rows="5" placeholder="Cấp độ 2&#9;Con hiểu yêu cầu cơ bản của bài…"></textarea><div class="row" style="margin-top:6px"><button class="btn" data-act="libPaste" data-kind="' + kind + '" data-lesson="' + (lessonId || '') + '">Thêm các câu đã dán</button></div></details>';
+}
+function catThuVien() {
+  const U = S.ui, L = lib(), mods = libModules(), item = S.sel.libItem || '';
+  const q = fold(U.libQ);
+  const classNames = [...new Set(S.classes.map(c => c.name))].sort((a, b) => a.localeCompare(b, 'vi', { numeric: true }));
+  const fits = l => (!U.libCls || libFitsClass(l, U.libCls)) && (!q || fold((l.code || '') + ' ' + l.name).includes(q));
+  const tree = mods.filter(m => !U.libMod || m.id === U.libMod).map(m => {
+    const allL = libLessonsOf(m.id), ls = allL.filter(fits);
+    if (!ls.length && (q || U.libCls)) return '';
+    return '<div class="libmod"><div class="row"><button class="grow" data-act="libPick" data-id="mod:' + m.id + '" aria-current="' + (item === 'mod:' + m.id) + '">' + esc(m.name) + '</button><span class="muted small">' + allL.length + ' bài</span></div><div class="list">' +
+      ls.map(l => { const n = libComments('daily', l.id).length; return '<button class="item" data-act="libPick" data-id="' + l.id + '" aria-current="' + (item === l.id) + '"><span>' + (l.code ? '<span class="muted">' + esc(l.code) + '</span> ' : '') + esc(l.name) + '</span><span class="muted small">' + (n ? n + ' câu' : 'chưa có câu') + '</span></button>'; }).join('') +
+      '<button class="item add" data-act="libAddLesson" data-mod="' + m.id + '"><span>+ Thêm bài vào module này</span></button></div></div>';
+  }).join('');
+  const special = ['final', 'suggest', 'quick'].map(k => '<button class="item" data-act="libPick" data-id="' + k + '" aria-current="' + (item === k) + '"><span>' + LIB_KIND[k] + '</span><span class="muted small">' + libComments(k).length + ' câu</span></button>').join('');
+  // The sample only fills an empty library: merged into an existing one it would duplicate lessons kept in other modules.
+  const seedLib = !L.modules.length && !L.comments.length ? seedLibrary() : null;
+  const left = '<section class="panel" style="display:grid;gap:10px;align-content:start"><h3>Module và bài học</h3>' +
+    '<input type="search" id="libQ" data-act="libQ" placeholder="Tìm bài học…" value="' + esc(U.libQ) + '">' +
+    '<div class="row"><select id="libModF" data-act="libModF" aria-label="Lọc module" style="flex:1 1 120px"><option value="">Mọi module (' + mods.length + ')</option>' + mods.map(m => '<option value="' + m.id + '"' + (U.libMod === m.id ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('') + '</select>' +
+    '<select id="libClsF" data-act="libClsF" aria-label="Lọc lớp" style="flex:1 1 90px"><option value="">Mọi lớp</option>' + classNames.map(c => '<option' + (U.libCls === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select></div>' +
+    (tree || '<div class="empty"><b>' + (mods.length ? 'Không có bài khớp bộ lọc' : 'Thư viện đang trống') + '</b>' + (mods.length ? '' : 'Thêm module ở dưới, nhập từ Excel' + (seedLib ? ' hoặc nạp thư viện mẫu' : '') + '.') + '</div>') +
+    '<div class="row"><input type="text" id="newModName" placeholder="Tên module mới" style="flex:1 1 140px"><button class="btn" data-act="libAddMod">Thêm module</button></div>' +
+    '<div class="libmod"><b class="small muted">Câu dùng chung cho mọi bài</b><div class="list">' + special + '</div></div></section>';
+
+  let right;
+  const imp = U.libImport;
+  if (imp) {
+    const s = imp.st;
+    right = '<section class="panel ask"><h3>Xem trước khi nhập · ' + esc(imp.fileName) + '</h3>' +
+      '<p style="margin:0">Sẽ thêm <b>' + s.modules + '</b> module mới, <b>' + s.lessons + '</b> bài mới và <b>' + s.comments + '</b> câu mới' + (Object.keys(imp.byKind || {}).length ? ' (' + Object.entries(imp.byKind).map(([k, n]) => LIB_KIND[k].toLowerCase() + ': ' + n).join(', ') + ')' : '') + '.</p>' +
+      '<p class="muted small" style="margin:0">' + (s.dup ? 'Bỏ qua ' + s.dup + ' câu trùng (đã có trong thư viện hoặc lặp lại trong file). ' : '') + (imp.bad ? 'Có ' + imp.bad + ' dòng không đọc được cấp độ hoặc loại nhận xét. ' : '') + 'Không câu hay bài nào đang có bị xóa hoặc sửa.</p>' +
+      (imp.sample?.length ? '<ul class="hist">' + imp.sample.map(r => '<li>' + esc(LIB_KIND[r.kind]) + (r.lesson ? ' · ' + esc(r.lesson) : '') + ' · cấp ' + r.level + (r.comp ? ' · ' + esc(COMP_NAME[r.comp]) : '') + ': ' + esc(r.text.slice(0, 110)) + '</li>').join('') + '</ul>' : '') +
+      '<div class="row"><button class="btn pri" data-act="libImpApply"' + (s.comments + s.lessons ? '' : ' disabled') + '>Nhập vào thư viện</button><button class="btn" data-act="libImpCancel">Thôi</button></div></section>';
+  } else if (item.startsWith('mod:')) {
+    const m = L.modules.find(x => 'mod:' + x.id === item);
+    right = !m ? '' : '<section class="panel edit" style="display:grid;gap:12px"><h3>Module</h3>' +
+      '<label class="field"><span>Tên module</span><input type="text" id="mod-n-' + m.id + '" data-act="libModName" data-id="' + m.id + '" value="' + esc(m.name) + '"></label>' +
+      '<p class="muted small" style="margin:0">' + libLessonsOf(m.id).length + ' bài. Theo chương trình Arkki, mỗi module thường gồm 10 bài; app chỉ ghi số bài, không giới hạn.</p>' +
+      '<div class="row"><button class="btn" data-act="libAddLesson" data-mod="' + m.id + '">+ Thêm bài</button><span class="grow"></span><button class="btn danger" data-act="libDelMod" data-id="' + m.id + '"' + (libLessonsOf(m.id).length ? ' disabled title="Xóa hết bài trong module trước"' : '') + '>Xóa module</button></div></section>';
+  } else if (LIB_KIND[item] && item !== 'daily') {
+    right = '<section class="panel edit" style="display:grid;gap:12px"><h3>' + LIB_KIND[item] + '</h3><p class="muted small" style="margin:0">' +
+      { final: 'Gợi ý cho ô "Nhận xét chung" ở tab Tổng hợp, lọc theo cấp độ trung bình cuối kỳ của học sinh.', suggest: 'Gợi ý cho ô "Đề xuất phát triển" ở tab Tổng hợp, lọc theo cấp độ trung bình cuối kỳ của học sinh.', quick: 'Câu ngắn theo từng năng lực, hiện trong ngăn chọn câu khi chấm mọi bài học.' }[item] + '</p>' + libCommentsPanel(item, '') + '</section>';
+  } else {
+    const l = L.lessons.find(x => x.id === item);
+    right = !l ? '<div class="empty"><b>Chọn một bài học ở cột trái</b>Mỗi bài có mục tiêu, lớp áp dụng và bộ câu nhận xét riêng. Khi giáo viên chấm buổi học đã gắn bài này, ngăn chọn câu chỉ hiện câu của đúng bài.</div>'
+      : '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">' + esc(l.name) + '</h3><button class="btn danger" data-act="libDelLesson" data-id="' + l.id + '">Xóa bài</button></div>' +
+        '<div class="grid2"><label class="field"><span>Mã bài (ví dụ P01)</span><input type="text" id="lib-code-' + l.id + '" data-act="libField" data-k="code" value="' + esc(l.code || '') + '"></label>' +
+        '<label class="field"><span>Tên bài học</span><input type="text" id="lib-name-' + l.id + '" data-act="libField" data-k="name" value="' + esc(l.name) + '"></label>' +
+        '<label class="field"><span>Module</span><select id="lib-mod-' + l.id + '" data-act="libField" data-k="moduleId">' + mods.map(m => '<option value="' + m.id + '"' + (m.id === l.moduleId ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('') + '</select></label>' +
+        '<label class="field"><span>Lớp áp dụng (cách nhau dấu phẩy)</span><input type="text" id="lib-cls-' + l.id + '" data-act="libField" data-k="classes" value="' + esc((l.classes || []).join(', ')) + '" placeholder="Để trống = mọi lớp"></label>' +
+        '<label class="field"><span>Số buổi thường dạy (dùng khi xếp lịch theo module)</span><input type="number" min="1" max="20" id="lib-ses-' + l.id + '" data-act="libField" data-k="sessions" value="' + (l.sessions || 1) + '"></label></div>' +
+        '<p class="muted small" style="margin:0">Ghi tên lớp hoặc phần đầu tên lớp: "6" áp dụng cho 6A1, 6A2; "Arkki 1" chỉ cho lớp Arkki 1. Lớp đang có: ' + esc(classNames.filter(c => libFitsClass(l, c)).join(', ') || 'chưa lớp nào khớp') + '.</p>' +
+        '<label class="field"><span>Mục tiêu bài học</span><textarea data-auto id="lib-goal-' + l.id + '" data-act="libField" data-k="goal" rows="3">' + esc(l.goal || '') + '</textarea></label>' +
+        libCommentsPanel('daily', l.id) + '</section>';
+  }
+  const tools = '<section class="panel" style="display:grid;gap:10px"><h3>Nhập thư viện từ Excel</h3>' +
+    '<p class="muted small" style="margin:0">Đọc mọi sheet có dòng tiêu đề gồm <b>Cấp độ</b> và cột câu nhận xét, cùng ít nhất một cột <b>Bài học</b>, <b>Loại nhận xét</b> hoặc <b>Năng lực</b>. Ví dụ file "Thư viện nhận xét mầm non Clover". Câu trùng được bỏ qua. Bạn xem trước rồi mới nhập.</p>' +
+    '<div class="row"><select id="libImpMod" style="max-width:280px" aria-label="Module nhận bài mới"><option value="__new">Bài mới vào module mới (tên theo file)</option>' + mods.map(m => '<option value="' + m.id + '">Bài mới vào: ' + esc(m.name) + '</option>').join('') + '</select>' +
+    '<label class="btn pri">Chọn file Excel…<input type="file" id="libFile" accept=".xlsx" hidden></label>' +
+    (seedLib ? '<button class="btn" data-act="libSeed">Nạp thư viện mẫu Arkki (' + seedLib.lessons.length + ' bài, ' + seedLib.comments.length + ' câu)</button>' : '') +
+    '<span class="small muted" id="libMsg"></span></div></section>';
+  return '<div class="cat">' + left + '<div style="display:grid;gap:18px;min-width:0;align-content:start">' + right + tools + '</div></div>';
+}
+// The offline build embeds a sample library in its seed data.
+function seedLibrary() { try { return JSON.parse(document.getElementById('arkki-seed')?.textContent || 'null')?.settings?.library || null; } catch { return null; } }
+// Minimal .xlsx reader (cell text only). ExcelJS cannot open files whose XML uses namespace prefixes
+// (<x:workbook>, written by the OpenXML SDK and many generators), so we read the parts ourselves.
+async function readXlsxRows(buf) {
+  const zip = await JSZip.loadAsync(buf);
+  const xml = async p => { const f = zip.file(p.replace(/^\//, '')); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+  const els = (n, name) => n ? [...n.getElementsByTagNameNS('*', name)] : [];
+  const attr = (n, local) => [...n.attributes].find(a => a.localName === local)?.value;
+  const rels = {};
+  for (const r of els(await xml('xl/_rels/workbook.xml.rels'), 'Relationship')) { const t = r.getAttribute('Target'); rels[r.getAttribute('Id')] = t.startsWith('/') ? t.slice(1) : 'xl/' + t.replace(/^\.\//, ''); }
+  const shared = els(await xml('xl/sharedStrings.xml'), 'si').map(si => els(si, 't').filter(t => t.parentNode.localName !== 'rPh').map(t => t.textContent).join(''));
+  const colIdx = ref => { let n = 0; for (const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  const out = [];
+  for (const sh of els(await xml('xl/workbook.xml'), 'sheet')) {
+    const doc = await xml(rels[attr(sh, 'id')] || ''); if (!doc) continue;
+    const rows = [];
+    for (const row of els(doc, 'row')) {
+      const r = []; let next = 0;
+      for (const c of els(row, 'c')) {
+        const i = c.getAttribute('r') ? colIdx(c.getAttribute('r')) : next; next = i + 1;
+        const t = c.getAttribute('t'), v = els(c, 'v')[0]?.textContent ?? '';
+        r[i] = t === 's' ? (shared[Number(v)] ?? '') : t === 'inlineStr' ? els(c, 't').map(x => x.textContent).join('') : t === 'b' ? (v === '1' ? 'TRUE' : 'FALSE') : v;
+      }
+      rows[(Number(row.getAttribute('r')) || rows.length + 1) - 1] = Array.from(r, x => x ?? '');
+    }
+    out.push({ name: sh.getAttribute('name'), hidden: /hidden/.test(sh.getAttribute('state') || ''), rows: Array.from(rows, x => x || []) });
+  }
+  return out;
+}
+async function parseLibraryFile(file, targetModId) {
+  const sheets = await readXlsxRows(await file.arrayBuffer());
+  const rows = []; let bad = 0;
+  sheets.forEach(({ rows: vals }) => {
+    const hdr = vals.slice(0, 8).findIndex(r => r.some(x => /^cap( do)?$/.test(fold(x))));
+    if (hdr < 0) return;
+    const H = vals[hdr].map(fold), col = (...ns) => H.findIndex(h => ns.some(n => h.startsWith(n)));
+    const cK = col('loai'), cL = col('bai hoc', 'du an'), cLv = H.findIndex(h => /^cap( do)?$/.test(h)), cC = col('nang luc', 'tieu chi'), cM = col('module'), cCl = col('lop');
+    let cT = -1; H.forEach((h, i) => { if (h && h !== 'stt' && i !== cLv) cT = i; });
+    if (cT < 0 || (cK < 0 && cL < 0 && cC < 0)) return;
+    for (const r of vals.slice(hdr + 1)) {
+      const text = (r[cT] || '').replace(/\s+/g, ' ').trim(); if (!text) continue;
+      const level = Number((String(r[cLv] || '').match(/\d/) || [])[0]);
+      const k = cK >= 0 ? fold(r[cK]) : '';
+      const kind = cK < 0 ? (cL >= 0 ? 'daily' : 'quick') : /hang ngay/.test(k) ? 'daily' : /de xuat/.test(k) ? 'suggest' : /cuoi ky|rieng/.test(k) ? 'final' : /nhanh|nang luc/.test(k) ? 'quick' : '';
+      const lesson = kind === 'daily' ? (r[cL] || '').trim() : '';
+      if (!level || !kind || (kind === 'daily' && !lesson)) { bad++; continue; }
+      rows.push({ kind, lesson, module: cM >= 0 ? (r[cM] || '').trim() : '', classes: cCl >= 0 ? (r[cCl] || '') : '', level, comp: cC >= 0 ? compOf(r[cC]) : '', text });
+    }
+  });
+  // Rows -> a small library, then merge it to count what is really new.
+  const fileMod = file.name.replace(/\.xlsx$/i, '').replace(/[_]+/g, ' ').trim();
+  const target = lib().modules.find(m => m.id === targetModId);
+  const add = { modules: [], lessons: [], comments: [] }, mods = new Map();
+  const getMod = name => { let m = mods.get(fold(name)); if (!m) { m = { id: uid(), name }; mods.set(fold(name), m); add.modules.push(m); } return m; };
+  for (const r of rows) {
+    let lessonId = '';
+    if (r.kind === 'daily') {
+      // A lesson that already exists anywhere in the library is reused; a new one goes to the chosen module.
+      const exist = lib().lessons.find(x => fold(x.name) === fold(r.lesson) && (!r.module || fold(lib().modules.find(m => m.id === x.moduleId)?.name) === fold(r.module)));
+      if (exist) lessonId = exist.id;
+      else {
+        const m = getMod(r.module || target?.name || fileMod);
+        let l = add.lessons.find(x => x.moduleId === m.id && fold(x.name) === fold(r.lesson));
+        if (!l) { l = { id: uid(), moduleId: m.id, code: '', name: r.lesson, classes: String(r.classes).split(/[,;]/).map(s => s.trim()).filter(Boolean), goal: '' }; add.lessons.push(l); }
+        lessonId = l.id;
+      }
+    }
+    add.comments.push({ id: uid(), kind: r.kind, lessonId, comp: r.comp, level: r.level, text: r.text });
+  }
+  const { next, st } = mergeLibrary(add);
+  const byKind = {}; for (const c of next.comments.slice(lib().comments.length)) byKind[c.kind] = (byKind[c.kind] || 0) + 1;
+  return { fileName: file.name, next, st, bad, byKind, sample: rows.slice(0, 5) };
+}
+function addLibComments(kind, lessonId, list) {
+  const add = { modules: [], lessons: [], comments: list.map(x => ({ id: uid(), kind, lessonId: lessonId || '', comp: x.comp || '', level: x.level, text: x.text })) };
+  const { next, st } = mergeLibrary(add);
+  return saveLibrary(next).then(() => st);
+}
+
+// ---------- Lập lịch nhanh: copy a class schedule from another term, or lay out a library module week by week ----------
+const dAdd = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const dDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+const WD = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const wdOf = s => new Date(s + 'T00:00:00Z').getUTCDay();
+const fmtDW = s => s ? WD[wdOf(s)] + ' ' + fmtDate(s) : 'chưa có ngày';
+// A lesson with any score, attendance or note keeps its place: re-planning never drops recorded work.
+const usedLessonIds = () => new Set(Object.values(S.records).flatMap(r => Object.entries(r.s || {}).filter(([, e]) => e && Object.values(e).some(v => v !== null && v !== '' && v !== false)).map(([k]) => k)));
+function schedPanel() {
+  const F = S.ui.sf || (S.ui.sf = {}), kind = F.kind || 'copy', cls = klass();
+  const semName = id => { const s = S.semesters.find(x => x.id === id); return s ? s.name + ' ' + s.year : ''; };
+  const others = S.classes.filter(c => c.id !== cls.id);
+  if (!F.src || !others.some(c => c.id === F.src)) {
+    // Default source: the class with the same name and school in the most recent other term.
+    const order = S.semesters.map(s => s.id);
+    F.src = others.filter(c => c.semesterId !== cls.semesterId && c.schoolId === cls.schoolId && fold(c.name) === fold(cls.name)).sort((a, b) => order.indexOf(a.semesterId) - order.indexOf(b.semesterId))[0]?.id || others[0]?.id || '';
+  }
+  const mods = libModules();
+  if (!F.mod || !mods.some(m => m.id === F.mod)) F.mod = (mods.find(m => libLessonsOf(m.id).some(l => libFitsClass(l, cls.name) && (l.classes || []).length)) || mods[0])?.id || '';
+  const mode = F.mode || 'replace';
+  const inp = (k, type, val, extra) => '<input type="' + type + '" id="sf-' + k + '" data-act="sf" data-k="' + k + '" value="' + esc(val ?? '') + '"' + (extra || '') + '>';
+  const modeRow = '<div class="row"><span class="small muted">Lịch đang có ' + S.lessons.length + ' buổi:</span>' +
+    '<label class="radio"><input type="radio" name="sfmode" data-act="sf" data-k="mode" value="replace"' + (mode === 'replace' ? ' checked' : '') + '> Thay các buổi chưa có điểm</label>' +
+    '<label class="radio"><input type="radio" name="sfmode" data-act="sf" data-k="mode" value="append"' + (mode === 'append' ? ' checked' : '') + '> Thêm vào, giữ nguyên lịch cũ</label></div>';
+  let form;
+  if (kind === 'copy') {
+    const groups = S.semesters.map(s => { const cs = others.filter(c => c.semesterId === s.id); return cs.length ? '<optgroup label="' + esc(s.name + ' ' + s.year) + '">' + cs.map(c => '<option value="' + c.id + '"' + (c.id === F.src ? ' selected' : '') + '>' + esc(c.name + ' · ' + (S.schools.find(x => x.id === c.schoolId)?.name || '')) + '</option>').join('') + '</optgroup>' : ''; }).join('');
+    form = !others.length ? '<p class="muted small" style="margin:0">Chưa có lớp nào khác để sao chép.</p>' :
+      '<div class="row"><label class="field" style="flex:1 1 240px"><span>Lấy lịch của lớp</span><select id="sf-src" data-act="sf" data-k="src">' + groups + '</select></label>' +
+      '<label class="field"><span>Ngày buổi 1 mới</span>' + inp('start', 'date', F.start) + '</label>' +
+      '<label class="chk" style="color:var(--ink);align-self:end"><input type="checkbox" data-act="sf" data-k="keepCancelled"' + (F.keepCancelled ? ' checked' : '') + '> Chép cả buổi đã hủy</label></div>' +
+      '<p class="muted small" style="margin:0">Các buổi giữ đúng khoảng cách ngày như lịch cũ, chỉ dời theo ngày buổi 1 mới. Để trống ngày thì app chọn ngày gần nhất từ hôm nay, cùng thứ với buổi 1 cũ. Bài trong thư viện, tên dự án và nội dung được chép theo; điểm, điểm danh, khóa và hoàn tất thì không.</p>';
+  } else {
+    const les = F.mod ? libLessonsOf(F.mod) : [];
+    form = !mods.length ? '<p class="muted small" style="margin:0">Thư viện chưa có module. Vào Danh mục → Thư viện bài học để thêm.</p>' :
+      '<div class="row"><label class="field" style="flex:1 1 240px"><span>Module</span><select id="sf-mod" data-act="sf" data-k="mod">' + mods.map(m => '<option value="' + m.id + '"' + (m.id === F.mod ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('') + '</select></label>' +
+      '<label class="field"><span>Ngày buổi đầu</span>' + inp('mstart', 'date', F.mstart || todayStr()) + '</label>' +
+      '<label class="field" style="max-width:130px"><span>Cách nhau (ngày)</span>' + inp('step', 'number', F.step || 7, ' min="1" max="31"') + '</label>' +
+      '<label class="field" style="flex:1 1 220px"><span>Ngày nghỉ (bỏ qua)</span>' + inp('skip', 'text', F.skip, ' placeholder="01/01/2027, 17/02/2027"') + '</label></div>' +
+      (les.length ? '<div class="field"><span>Số buổi cho mỗi bài (0 = bỏ bài này)</span><div class="row">' + les.map(l => '<label class="chk" style="color:var(--ink)' + (libFitsClass(l, cls.name) ? '' : ';opacity:.6" title="Bài này không ghi lớp ' + esc(cls.name) + ' trong Lớp áp dụng') + '">' +
+        '<input type="number" min="0" max="20" style="width:56px" id="sf-n-' + l.id + '" data-act="sf" data-k="n:' + l.id + '" value="' + (F['n:' + l.id] ?? l.sessions ?? 1) + '"> ' + esc((l.code ? l.code + ' ' : '') + l.name) + '</label>').join('') + '</div></div>' : '<p class="muted small" style="margin:0">Module này chưa có bài.</p>') +
+      '<p class="muted small" style="margin:0">Mỗi bài xếp liên tiếp đủ số buổi, các buổi cách nhau theo số ngày đã chọn; ngày nghỉ được bỏ qua và lịch lùi sang tuần sau. Số buổi mặc định lấy từ "Số buổi thường dạy" của bài trong thư viện.</p>';
+  }
+  const P = S.ui.sched;
+  let preview = '';
+  if (P) {
+    const used = usedLessonIds(), kept = P.mode === 'replace' ? S.lessons.filter(l => used.has(l.id)) : S.lessons;
+    const keptDates = new Set(kept.map(l => l.date));
+    preview = '<div class="picker"><b class="small">Xem trước: ' + esc(P.title) + '</b>' +
+      '<div class="small">Sẽ thêm <b>' + P.rows.length + '</b> buổi' + (P.mode === 'replace' ? ', xóa <b>' + (S.lessons.length - kept.length) + '</b> buổi chưa có điểm, giữ <b>' + kept.length + '</b> buổi đã có điểm hoặc nhận xét' : ', giữ nguyên ' + S.lessons.length + ' buổi đang có') + '.</div>' +
+      (P.note ? '<div class="small muted">' + esc(P.note) + '</div>' : '') +
+      '<div style="overflow-x:auto;max-height:320px"><table class="small" style="min-width:0"><tbody>' + P.rows.map((r, i) => '<tr><td class="muted">' + (i + 1) + '</td><td style="white-space:nowrap">' + esc(fmtDW(r.date)) + '</td><td>' + esc(r.project || '(chưa có tên)') + (r.content ? ' <span class="muted">· ' + esc(r.content) + '</span>' : '') + '</td><td>' + (keptDates.has(r.date) ? '<span class="pill warn">Trùng ngày với buổi đang giữ</span>' : '') + '</td></tr>').join('') + '</tbody></table></div>' +
+      '<div class="row"><button class="btn pri" data-act="schedApply"' + (P.rows.length ? '' : ' disabled') + '>Áp dụng vào lịch lớp ' + esc(cls.name) + '</button><button class="btn" data-act="schedCancel">Thôi</button></div></div>';
+  }
+  return '<section class="panel" style="display:grid;gap:10px"><h3>Lập lịch nhanh</h3>' +
+    '<div class="chips"><button data-act="sfKind" data-v="copy" aria-pressed="' + (kind === 'copy') + '">Sao chép từ lớp ở học kỳ khác</button><button data-act="sfKind" data-v="module" aria-pressed="' + (kind === 'module') + '">Xếp theo module trong thư viện</button></div>' +
+    form + modeRow + '<div class="row"><button class="btn" data-act="schedPreview">Xem trước</button><span class="small" id="sfMsg" style="color:var(--bad)"></span></div>' + preview + '</section>';
+}
+async function buildSchedule() {
+  const F = S.ui.sf || {}, cls = klass();
+  if ((F.kind || 'copy') === 'copy') {
+    const src = S.classes.find(c => c.id === F.src); if (!src) throw new Error('Chọn lớp để lấy lịch.');
+    let ls = (await Store.list('lessons', 'classId', src.id)).filter(l => l.date).sort((a, b) => a.date.localeCompare(b.date) || (a.order ?? 0) - (b.order ?? 0));
+    const nCancel = ls.filter(l => l.cancelled).length;
+    if (!F.keepCancelled) ls = ls.filter(l => !l.cancelled);
+    if (!ls.length) throw new Error('Lớp ' + src.name + ' chưa có buổi học nào có ngày.');
+    if (!F.start) { let d = todayStr(); while (wdOf(d) !== wdOf(ls[0].date)) d = dAdd(d, 1); F.start = d; }
+    const sem = S.semesters.find(s => s.id === src.semesterId);
+    return { title: 'chép ' + ls.length + ' buổi của lớp ' + src.name + ' · ' + (sem ? sem.name + ' ' + sem.year : '') + ', buổi 1 vào ' + fmtDW(F.start),
+      note: !F.keepCancelled && nCancel ? 'Bỏ qua ' + nCancel + ' buổi đã hủy ở lịch cũ.' : '',
+      rows: ls.map(l => ({ date: dAdd(F.start, dDiff(ls[0].date, l.date)), project: l.project || '', content: l.content || '', libId: l.libId && l.libId !== 'none' ? l.libId : '' })) };
+  }
+  const m = lib().modules.find(x => x.id === F.mod); if (!m) throw new Error('Chọn module.');
+  const step = Math.max(1, Number(F.step) || 7), start = F.mstart || todayStr();
+  const skip = new Set(String(F.skip || '').split(/[,;\s]+/).map(parseDate).filter(Boolean));
+  const rows = []; let d = start, skipped = 0;
+  for (const l of libLessonsOf(m.id)) {
+    const n = Math.max(0, Math.min(20, Number(F['n:' + l.id] ?? l.sessions ?? 1)));
+    for (let k = 1; k <= n; k++) {
+      while (skip.has(d)) { d = dAdd(d, step); skipped++; }
+      rows.push({ date: d, project: l.name, content: n > 1 ? 'Buổi ' + k + '/' + n : '', libId: l.id });
+      d = dAdd(d, step);
+    }
+  }
+  if (!rows.length) throw new Error('Chưa có buổi nào: kiểm tra số buổi của từng bài.');
+  return { title: 'xếp module "' + m.name + '" từ ' + fmtDW(start) + ', ' + step + ' ngày một buổi', note: skipped ? 'Đã bỏ qua ' + skipped + ' ngày nghỉ.' : '', rows };
+}
+async function applySchedule(P) {
+  const cid = S.sel.cls, used = usedLessonIds();
+  const old = await Store.list('lessons', 'classId', cid);
+  const kept = P.mode === 'replace' ? old.filter(l => used.has(l.id)) : old;
+  const add = P.rows.filter(r => !kept.some(k => k.date === r.date && fold(k.project) === fold(r.project)));
+  await write(async () => {
+    for (const l of old) if (!kept.includes(l)) await Store.del('lessons', l.id);
+    for (const r of add) await Store.set('lessons', uid(), { classId: cid, order: 0, date: r.date, project: r.project, content: r.content, libId: r.libId || '' });
+    const all = (await Store.list('lessons', 'classId', cid)).sort((a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')) || (a.order ?? 0) - (b.order ?? 0));
+    for (const [i, l] of all.entries()) if (l.order !== i + 1) await Store.update('lessons', l.id, { order: i + 1 });
+  });
+  return { added: add.length, removed: old.length - kept.length, kept: kept.length, same: P.rows.length - add.length };
+}
+
 function catBaiHoc() {
   const nc = needClass(); if (nc) return nc;
-  const rows = S.lessons.map((l, i) => '<tr><td class="small muted">B' + String(i + 1).padStart(2, '0') + '</td>' +
+  const cls = klass()?.name;
+  const libSel = l => {
+    const cur = libLessonFor(l);
+    const groups = libModules().map(m => { const ls = libLessonsOf(m.id).filter(x => libFitsClass(x, cls) || x.id === cur?.id); return ls.length ? '<optgroup label="' + esc(m.name) + '">' + ls.map(x => '<option value="' + x.id + '"' + (cur?.id === x.id ? ' selected' : '') + '>' + esc((x.code ? x.code + ' · ' : '') + x.name) + '</option>').join('') + '</optgroup>' : ''; }).join('');
+    return '<select id="ls-lib-' + l.id + '" data-act="lsLib" data-id="' + l.id + '" style="min-width:180px"><option value="none">— chưa gắn —</option>' + groups + '</select>' +
+      (cur ? '<div class="muted small">' + (l.libId ? '' : 'Tự khớp theo tên · ') + libComments('daily', cur.id).length + ' câu gợi ý</div>' : '');
+  };
+  const rows = S.lessons.map((l, i) => '<tr><td class="small muted">B' + String(i + 1).padStart(2, '0') + (l.cancelled ? '<div>đã hủy</div>' : '') + '</td>' +
     '<td><input type="date" id="ls-d-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="date" value="' + esc(l.date || '') + '"></td>' +
+    '<td>' + libSel(l) + '</td>' +
     '<td><input type="text" id="ls-p-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="project" value="' + esc(l.project || '') + '"></td>' +
     '<td><input type="text" id="ls-c-' + l.id + '" data-act="lsField" data-id="' + l.id + '" data-k="content" value="' + esc(l.content || '') + '"></td>' +
     '<td><button class="btn danger" data-act="delLesson" data-id="' + l.id + '">Xóa</button></td></tr>').join('');
   const sib = S.classes.filter(c => c.schoolId === S.sel.school && c.semesterId === S.sel.sem && c.id !== S.sel.cls);
-  return '<section class="panel edit" style="display:grid;gap:12px"><h3>Bài học của lớp ' + esc(klass()?.name) + ' · ' + esc(semester()?.name) + ' ' + esc(semester()?.year) + ' (' + S.lessons.length + ' buổi)</h3>' +
-    (S.lessons.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Buổi</th><th>Ngày</th><th>Dự án</th><th>Nội dung</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Chưa có bài học</b>Dán danh sách buổi học ở dưới.</div>') +
-    '<p class="muted small" style="margin:0">Buổi 1 luôn là mốc đánh giá đầu kỳ. Thứ tự buổi theo ngày học.</p></section>' +
+  const linked = S.lessons.filter(l => libLessonFor(l)).length;
+  return '<section class="panel edit" style="display:grid;gap:12px"><h3>Lịch buổi học của lớp ' + esc(klass()?.name) + ' · ' + esc(semester()?.name) + ' ' + esc(semester()?.year) + ' (' + S.lessons.length + ' buổi, ' + linked + ' buổi đã gắn bài trong thư viện)</h3>' +
+    (S.lessons.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Buổi</th><th>Ngày</th><th>Bài trong thư viện</th><th>Dự án (in trên báo cáo)</th><th>Nội dung</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Chưa có buổi học</b>Dán danh sách buổi học ở dưới.</div>') +
+    '<p class="muted small" style="margin:0">Chọn bài trong thư viện cho từng buổi: tên dự án tự điền theo bài, và khi chấm, ngăn chọn câu chỉ hiện câu của đúng bài đó. Danh sách chỉ hiện bài có "Lớp áp dụng" khớp lớp này. Buổi không hủy đầu tiên là mốc đánh giá đầu kỳ. Thứ tự buổi theo ngày học.</p></section>' +
+    schedPanel() +
     '<section class="panel" style="display:grid;gap:10px"><h3>Nhập danh sách bài học</h3><p class="muted small" style="margin:0">Dán từ Excel theo cột: <b>Ngày</b> | <b>Dự án</b> | Nội dung. Ngày dạng 06/01/2026.</p>' +
     '<textarea id="pasteLessons" rows="6" placeholder="06/01/2026&#9;Nhà rắn (Serpent House)&#9;Nhận biết hình khối 3D"></textarea>' +
     '<div class="row"><button class="btn pri" data-act="importLessons">Thêm buổi học</button><button class="btn" data-act="addLesson">Thêm 1 buổi trống</button><span class="small muted" id="importMsg"></span></div>' +
     (sib.length && S.lessons.length ? '<div class="row"><span class="small muted">Áp dụng danh sách này cho lớp khác (thay thế bài học chưa có điểm):</span>' + sib.map(c => '<label class="chk" style="color:var(--ink)"><input type="checkbox" class="copyTo" value="' + c.id + '"> ' + esc(c.name) + '</label>').join('') + '<button class="btn" data-act="copyLessons">Sao chép</button></div>' : '') + '</section>';
+}
+
+// ---------- Giáo viên & phân công (trial mode and Claude artifact) ----------
+function saveStaff(next) { S.staff = next; return write(() => Store.set('settings', 'staff', next)); }
+const staffClone = () => JSON.parse(JSON.stringify(S.staff || { teachers: [] }));
+const tName = id => teacherById(id)?.name || '(không rõ)';
+function catPhanCong() {
+  const sem = semester(), sc = school();
+  const ts = staff(), active = ts.filter(t => t.active !== false);
+  const semCls = S.classes.filter(c => c.semesterId === S.sel.sem);
+  const schCls = semCls.filter(c => c.schoolId === S.sel.school);
+  const multiSch = new Set(semCls.map(c => c.schoolId)).size > 1;
+  const clsName = c => c.name + (multiSch ? ' · ' + (S.schools.find(x => x.id === c.schoolId)?.name || '') : '');
+  const T = S.ui.tmp || {};
+
+  // 1. Accounts
+  const assigned = t => {
+    const main = semCls.filter(c => (c.teacherIds || []).includes(t.id)).map(clsName);
+    const temp = semCls.flatMap(c => (c.temps || []).filter(x => x.teacherId === t.id && tempState(x) !== 'expired').map(x => 'tạm thời ' + clsName(c) + ' (' + fmtD(x.from) + '–' + fmtD(x.to) + ')'));
+    return { main, temp };
+  };
+  const accRows = ts.map(t => {
+    const a = assigned(t);
+    const pill = t.active === false ? '<span class="pill bad">Đã khóa</span>' : a.main.length ? '<span class="pill ok">Hoạt động</span>' : a.temp.length ? '<span class="pill blue">Tạm thời</span>' : '<span class="pill warn">Chưa phân công</span>';
+    return '<tr><td><input type="text" id="t-n-' + t.id + '" data-act="tField" data-id="' + t.id + '" data-k="name" value="' + esc(t.name) + '"></td>' +
+      '<td><input type="text" id="t-e-' + t.id + '" data-act="tField" data-id="' + t.id + '" data-k="email" value="' + esc(t.email || '') + '" placeholder="email@arkki.edu.vn"></td>' +
+      '<td class="small">' + esc(a.main.concat(a.temp).join('; ') || '—') + '</td><td>' + pill + '</td>' +
+      '<td><button class="btn' + (t.active === false ? '' : ' danger') + '" data-act="tLock" data-id="' + t.id + '">' + (t.active === false ? 'Mở khóa' : 'Khóa') + '</button></td></tr>';
+  }).join('');
+  const acc = '<section class="panel edit" style="display:grid;gap:12px"><h3>Tài khoản giáo viên (' + ts.length + ')</h3>' +
+    (ts.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Họ tên</th><th>Email</th><th>Lớp được chỉ định · ' + esc(sem ? sem.name + ' ' + sem.year : '') + '</th><th>Trạng thái</th><th></th></tr></thead><tbody>' + accRows + '</tbody></table></div>'
+      : '<div class="empty"><b>Chưa có tài khoản giáo viên</b>Tạo tài khoản ở dưới, rồi chỉ định lớp ở phần Phân công.</div>') +
+    '<div class="row"><input type="text" id="newTName" placeholder="Họ tên, ví dụ Cô Lan" style="max-width:220px"><input type="text" id="newTEmail" placeholder="Email" style="max-width:240px"><button class="btn pri" data-act="addTeacher">Tạo tài khoản</button><span class="small" id="tMsg" style="color:var(--bad)"></span></div>' +
+    '<p class="muted small" style="margin:0">Mỗi giáo viên một tài khoản, không dùng tài khoản chung. Khóa tài khoản thì giáo viên mất quyền vào lớp ngay, còn điểm và nhận xét đã nhập vẫn giữ nguyên. ' +
+    (Store.mode === 'local' ? 'Bản thử chưa gửi email đặt mật khẩu: khi bật máy chủ, giáo viên nhận email và tự đặt mật khẩu lần đầu. Muốn thử quyền của một giáo viên, chọn tên người đó ở ô "Dùng thử với vai trò" trên cùng.' : '') + '</p></section>';
+
+  // 2. Two main teachers per class
+  const sel = (c, slot) => {
+    const ids = c.teacherIds || [], cur = ids[slot] || '', other = ids[1 - slot] || '';
+    const opts = active.filter(t => t.id !== other || t.id === cur);
+    const extra = cur && !opts.some(t => t.id === cur) ? '<option value="' + cur + '" selected>' + esc(tName(cur)) + ' (đã khóa)</option>' : '';
+    return '<select id="as-' + c.id + '-' + slot + '" data-act="assignT" data-cls="' + c.id + '" data-slot="' + slot + '"><option value="">— chưa chỉ định —</option>' + extra +
+      opts.map(t => '<option value="' + t.id + '"' + (t.id === cur ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') + '</select>';
+  };
+  const asRows = schCls.map(c => {
+    const ids = (c.teacherIds || []).filter(Boolean), locked = ids.filter(id => teacherById(id)?.active === false);
+    const pill = locked.length ? '<span class="pill warn">Có giáo viên đã khóa</span>' : ids.length === 2 ? '<span class="pill ok">Đủ 2 giáo viên</span>' : ids.length === 1 ? '<span class="pill warn">Còn thiếu 1</span>' : '<span class="pill bad">Chưa có giáo viên</span>';
+    const last = (c.assignLog || []).slice(-1)[0];
+    return '<tr><td><b>' + esc(c.name) + '</b>' + (last ? '<div class="muted small">Đổi lần cuối: ' + esc(last.by) + ' · ' + esc(fmtWhen(last.at)) + '</div>' : '') + '</td><td>' + sel(c, 0) + '</td><td>' + sel(c, 1) + '</td><td>' + pill + '</td></tr>';
+  }).join('');
+  const asg = '<section class="panel edit" style="display:grid;gap:12px"><h3>Phân công lớp · ' + esc(sc?.name || '') + ' · ' + esc(sem ? sem.name + ' ' + sem.year : '') + '</h3>' +
+    (!schCls.length ? '<div class="empty"><b>Trường này chưa có lớp trong học kỳ đang chọn</b>Đổi trường hoặc học kỳ ở thanh trên cùng.</div>'
+      : !active.length ? '<div class="empty"><b>Cần tạo tài khoản giáo viên trước</b>Phần Tài khoản giáo viên ở trên.</div>'
+      : '<div style="overflow-x:auto"><table><thead><tr><th>Lớp</th><th>Giáo viên 1</th><th>Giáo viên 2</th><th></th></tr></thead><tbody>' + asRows + '</tbody></table></div>') +
+    '<p class="muted small" style="margin:0">Mỗi lớp 2 giáo viên. Chỉ giáo viên được chỉ định mới thấy lớp và vào chấm, nhận xét. Đổi giáo viên thì người cũ mất quyền vào lớp, còn điểm đã chấm vẫn giữ và ghi tên người chấm. Khi hai giáo viên cùng chấm một buổi, điểm lưu theo người sửa gần nhất.</p></section>';
+
+  // 3. Stand-ins with start and end dates
+  const tmpList = schCls.flatMap(c => (c.temps || []).map(t => ({ c, t }))).sort((a, b) => String(b.t.from).localeCompare(String(a.t.from)));
+  const ST = { active: '<span class="pill ok">Đang hiệu lực</span>', future: '<span class="pill blue">Sắp tới</span>', expired: '<span class="pill">Đã hết hạn</span>' };
+  const tmpRows = tmpList.map(({ c, t }) => { const s = tempState(t);
+    return '<tr><td>' + esc(c.name) + '</td><td><b>' + esc(tName(t.teacherId)) + '</b>' + (t.replacesId ? '<div class="muted small">thay ' + esc(tName(t.replacesId)) + '</div>' : '') + '</td>' +
+      '<td class="small">' + esc(fmtDate(t.from)) + ' → ' + (t.ended ? 'kết thúc sớm lúc ' + esc(fmtWhen(t.ended.at)) + ' bởi ' + esc(t.ended.by) : esc(fmtDate(t.to))) + (t.reason ? '<div class="muted">' + esc(t.reason) + '</div>' : '') + '</td><td>' + ST[s] + '</td>' +
+      '<td>' + (s === 'expired' ? '' : '<button class="btn" data-act="endTemp" data-cls="' + c.id + '" data-id="' + t.id + '">' + (s === 'future' ? 'Hủy' : 'Kết thúc ngay') + '</button>') + '</td></tr>'; }).join('');
+  const tCls = schCls.find(c => c.id === T.cls) || schCls[0];
+  const mains = (tCls?.teacherIds || []).filter(Boolean);
+  const tmp = '<section class="panel edit" style="display:grid;gap:12px"><h3>Giáo viên tạm thời</h3>' +
+    (schCls.length && active.length ? '<div class="row">' +
+      '<label class="field"><span>Lớp</span><select id="tmpCls" data-act="tmpCls">' + schCls.map(c => '<option value="' + c.id + '"' + (c.id === tCls?.id ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select></label>' +
+      '<label class="field"><span>Giáo viên dạy thay</span><select id="tmpT"><option value="">— chọn —</option>' + active.filter(t => !mains.includes(t.id)).map(t => '<option value="' + t.id + '">' + esc(t.name) + '</option>').join('') + '</select></label>' +
+      '<label class="field"><span>Thay cho</span><select id="tmpFor"><option value="">— không ghi —</option>' + mains.map(id => '<option value="' + id + '">' + esc(tName(id)) + '</option>').join('') + '</select></label>' +
+      '<label class="field"><span>Từ ngày</span><input type="date" id="tmpFrom" value="' + todayStr() + '"></label>' +
+      '<label class="field"><span>Đến ngày</span><input type="date" id="tmpTo" value="' + todayStr() + '"></label>' +
+      '<label class="field" style="flex:1 1 180px"><span>Lý do</span><input type="text" id="tmpReason" placeholder="Ví dụ: cô Lan đi tập huấn"></label>' +
+      '<button class="btn pri" data-act="addTemp" style="align-self:end">Thêm giáo viên tạm thời</button></div><span class="small" id="tmpMsg" style="color:var(--bad)"></span>' : '') +
+    (tmpRows ? '<div style="overflow-x:auto"><table><thead><tr><th>Lớp</th><th>Giáo viên tạm thời</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>' + tmpRows + '</tbody></table></div>' : '<p class="muted small" style="margin:0">Chưa có giáo viên tạm thời nào ở trường này trong học kỳ đang chọn.</p>') +
+    '<p class="muted small" style="margin:0">Giáo viên tạm thời vào được lớp từ ngày bắt đầu tới hết ngày kết thúc, sau đó tự mất quyền. Giáo viên chính vẫn giữ quyền trong thời gian này.</p></section>';
+  return acc + asg + tmp;
 }
 
 // ---------- Giáo viên & phân công (Supabase only) ----------
@@ -877,10 +1845,205 @@ $('#view').addEventListener('click', async e => {
   if (act === 'lesson') { S.sel.lesson = b.dataset.id; saveSel(); render(true); }
   else if (act === 'prevLesson' || act === 'nextLesson') { const i = S.lessons.findIndex(l => l.id === S.sel.lesson) + (act === 'nextLesson' ? 1 : -1); if (S.lessons[i]) { S.sel.lesson = S.lessons[i].id; saveSel(); render(true); } }
   else if (act === 'score') {
+    if (lessonReadOnly()) return;
     const st = b.dataset.st, c = b.dataset.c, v = Number(b.dataset.v);
     const cur = S.records[st]?.s?.[S.sel.lesson]?.[c];
-    const patch = { s: { [S.sel.lesson]: { [c]: cur === v ? null : v } } };
+    // Scoring a student marks them present; clearing a score leaves attendance as it is.
+    const patch = { s: { [S.sel.lesson]: cur === v ? { [c]: null } : { [c]: v, att: 'present', absent: false } } };
     patchRecord(st, patch).catch(() => {}); render(true);
+  }
+  else if (act === 'att') {
+    if (lessonReadOnly()) return;
+    const v = b.dataset.v;
+    patchRecord(b.dataset.st, { s: { [S.sel.lesson]: { att: v, absent: v === 'absent' } } }).catch(() => {}); render(true);
+  }
+  else if (act === 'doneLesson') await write(() => Store.update('lessons', S.sel.lesson, { done: stamp() }));
+  else if (act === 'lockBase') { const L = S.lessons.find(l => l.id === S.sel.lesson); await write(() => Store.update('lessons', L.id, { locked: stamp(), lockLog: [...(L.lockLog || []), { act: 'lock', ...stamp() }] })); }
+  else if (act === 'unlockBase') { S.ui.ask = { kind: 'unlock', lessonId: S.sel.lesson }; render(true); window.scrollTo(0, 0); }
+  else if (act === 'cancelLesson') {
+    const isBase = activeLessons(S.lessons)[0]?.id === S.sel.lesson;
+    S.ui.ask = { kind: 'cancel', lessonId: S.sel.lesson, note: isBase ? 'Buổi này đang là mốc đầu kỳ. Hủy thì buổi kế tiếp sẽ thành mốc đầu kỳ.' : '' };
+    render(true); window.scrollTo(0, 0);
+  }
+  else if (act === 'uncancelLesson') await write(() => Store.update('lessons', S.sel.lesson, { cancelled: false, cancelReason: '', cancelBy: null }));
+  else if (act === 'askCancel') { S.ui.ask = null; render(true); }
+  else if (act === 'askOk') {
+    const a = S.ui.ask; if (!a) return;
+    const reason = ($('#askReason')?.value || '').trim();
+    if (a.kind !== 'cancel' && !reason) { $('#askErr').textContent = 'Cần ghi lý do.'; $('#askReason').focus(); return; }
+    S.ui.ask = null;
+    if (a.kind === 'cancel') await write(() => Store.update('lessons', a.lessonId, { cancelled: true, cancelReason: reason, cancelBy: stamp(), done: null }));
+    else if (a.kind === 'unlock') { const L = S.lessons.find(l => l.id === a.lessonId); await write(() => Store.update('lessons', L.id, { locked: null, lockLog: [...(L.lockLog || []), { act: 'unlock', reason, ...stamp() }] })); }
+    else if (a.kind === 'return') {
+      const n = await returnItems(a.items, reason);
+      if (a.from === 'rev') { Rev.items = Rev.items.filter(i => !a.items.includes(i)); a.items.forEach(i => Rev.sel.delete(revKey(i))); Rev.msg = 'Đã trả lại ' + n + ' report. Giáo viên sẽ thấy lý do ở tab Tổng hợp.'; }
+      else Rev.key = '';
+    }
+    render(true);
+  }
+  // transfers, leaving, history
+  else if (act === 'stMoveOpen') { S.ui.move = b.dataset.id; S.ui.mv = { kind: 'move' }; S.ui.hist = ''; render(true); }
+  else if (act === 'stMoveCancel') { S.ui.move = ''; render(true); }
+  else if (act === 'stMoveOk') {
+    const st = S.students.find(s => s.id === b.dataset.id); if (!st) return;
+    try { const msg = await moveStudent(st, S.ui.mv || {}); S.ui.move = ''; setSave('', msg); render(true); }
+    catch (e) { const m = $('#mvMsg'); if (m) m.textContent = e?.message || String(e); }
+  }
+  else if (act === 'stMoveUndo') {
+    const st = S.students.find(s => s.id === b.dataset.id); if (!st) return;
+    try { setSave('', await undoMove(st)); render(true); } catch (e) { setSave('err', e?.message || String(e)); }
+  }
+  else if (act === 'stReturn') { await write(() => Store.update('students', b.dataset.id, { status: null, leftAt: null, leftReason: '', leftBy: null })); }
+  else if (act === 'stHist') { S.ui.hist = S.ui.hist === b.dataset.id ? '' : b.dataset.id; S.ui.histData = null; S.ui.move = ''; render(true); }
+  else if (act === 'histOpen') {
+    const x = STU.get(b.dataset.id), c = S.classes.find(k => k.id === b.dataset.cls); if (!x || !c) return;
+    Object.assign(S.sel, { sem: c.semesterId, school: c.schoolId, cls: c.id, student: x.id });
+    if (reportable(x)) S.sel.tab = 'tonghop'; else { S.sel.tab = 'danhmuc'; S.sel.catTab = 'hocsinh'; }
+    S.ui.hist = ''; saveSel(); fixSel(); renderCtx(); render(true); window.scrollTo(0, 0);
+  }
+  // quick scheduling
+  else if (act === 'sfKind') { (S.ui.sf ||= {}).kind = b.dataset.v; S.ui.sched = null; render(true); }
+  else if (act === 'schedPreview') {
+    const m = $('#sfMsg'); if (m) m.textContent = '';
+    try { const P = await buildSchedule(); S.ui.sched = { ...P, mode: S.ui.sf?.mode || 'replace' }; render(true); }
+    catch (e) { if (m) m.textContent = e?.message || String(e); }
+  }
+  else if (act === 'schedApply') {
+    const P = S.ui.sched; if (!P) return;
+    S.ui.sched = null;
+    const r = await applySchedule(P);
+    setSave('', 'Đã thêm ' + r.added + ' buổi' + (r.removed ? ', xóa ' + r.removed + ' buổi chưa có điểm' : '') + (r.same ? ', bỏ qua ' + r.same + ' buổi đã có sẵn' : '')); render(true);
+  }
+  else if (act === 'schedCancel') { S.ui.sched = null; render(true); }
+  // teacher accounts and assignment
+  else if (act === 'addTeacher') {
+    const name = $('#newTName').value.trim(), email = $('#newTEmail').value.trim(), m = $('#tMsg');
+    if (!name) { m.textContent = 'Cần nhập họ tên.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { m.textContent = 'Email chưa đúng dạng.'; return; }
+    if (staff().some(t => fold(t.email) === fold(email))) { m.textContent = 'Email này đã có tài khoản.'; return; }
+    const next = staffClone(); next.teachers.push({ id: uid(), name, email, active: true, created: stamp() });
+    await saveStaff(next); render(true);
+  }
+  else if (act === 'tLock') {
+    const next = staffClone(), t = next.teachers.find(x => x.id === b.dataset.id); if (!t) return;
+    t.active = t.active === false; (t.log ||= []).push({ act: t.active ? 'unlock' : 'lock', ...stamp() });
+    await saveStaff(next); setSave('', (t.active ? 'Đã mở khóa ' : 'Đã khóa ') + t.name); render(true);
+  }
+  else if (act === 'addTemp') {
+    const cls = S.classes.find(c => c.id === $('#tmpCls').value), m = $('#tmpMsg');
+    const teacherId = $('#tmpT').value, from = $('#tmpFrom').value, to = $('#tmpTo').value;
+    if (!cls) return;
+    if (!teacherId) { m.textContent = 'Chọn giáo viên dạy thay.'; return; }
+    if (!from || !to || to < from) { m.textContent = 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu.'; return; }
+    const temps = [...(cls.temps || []), { id: uid(), teacherId, replacesId: $('#tmpFor').value, from, to, reason: $('#tmpReason').value.trim(), ...stamp() }];
+    await write(() => Store.update('classes', cls.id, { temps })); setSave('', 'Đã thêm giáo viên tạm thời cho lớp ' + cls.name); render(true);
+  }
+  else if (act === 'endTemp') {
+    const cls = S.classes.find(c => c.id === b.dataset.cls); if (!cls) return;
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    const yesterday = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    // A stand-in not started yet is removed; a running one ends yesterday, so access stops now and the record stays.
+    const temps = (cls.temps || []).flatMap(t => t.id !== b.dataset.id ? [t] : tempState(t) === 'future' ? [] : [{ ...t, to: yesterday, ended: stamp() }]);
+    await write(() => Store.update('classes', cls.id, { temps })); render(true);
+  }
+  // comment picker while grading
+  else if (act === 'pickOpen') { S.ui.pick = S.ui.pick === b.dataset.st ? '' : b.dataset.st; S.ui.pickComp = ''; render(true); }
+  else if (act === 'pickComp') { S.ui.pickComp = b.dataset.v; render(true); }
+  else if (act === 'pickText') {
+    const L = S.lessons.find(l => l.id === S.sel.lesson), st = b.dataset.st;
+    const c = pickPool(L, libLessonFor(L), activeComps(school())).find(x => x.id === b.dataset.cid); if (!c) return;
+    queueNote(st, { s: { [L.id]: { note: toggleSentence(S.records[st]?.s?.[L.id]?.note || '', c.text) } } }); flushNote(st); render(true);
+  }
+  else if (act === 'finPick') { S.ui.finPick = S.ui.finPick === b.dataset.k ? '' : b.dataset.k; render(true); }
+  else if (act === 'finPickText') {
+    const f = S.ui.finPick, c = libComments(FIN_PICK[f]?.[0]).find(x => x.id === b.dataset.cid); if (!c) return;
+    const st = S.sel.student;
+    queueNote(st, { fin: { [f]: toggleSentence(S.records[st]?.fin?.[f] || '', c.text) } }); flushNote(st); render(true);
+  }
+  // lesson library
+  else if (act === 'libPick') { S.sel.libItem = b.dataset.id; S.ui.libImport = null; S.ui.libComp = ''; S.ui.libLevel = ''; saveSel(); render(true); }
+  else if (act === 'libChipComp') { S.ui.libComp = b.dataset.v; render(true); }
+  else if (act === 'libChipLevel') { S.ui.libLevel = b.dataset.v; render(true); }
+  else if (act === 'libAddMod') {
+    const name = $('#newModName').value.trim(); if (!name) return;
+    const next = libClone(), id = uid(); next.modules.push({ id, name, order: next.modules.length + 1 });
+    S.sel.libItem = 'mod:' + id; await saveLibrary(next); render(true);
+  }
+  else if (act === 'libAddLesson') {
+    const next = libClone(), id = uid(), mid = b.dataset.mod;
+    next.lessons.push({ id, moduleId: mid, order: next.lessons.filter(l => l.moduleId === mid).length + 1, code: '', name: 'Bài mới', classes: [], goal: '' });
+    S.sel.libItem = id; S.ui.libQ = ''; await saveLibrary(next); render(true); $('#lib-name-' + id)?.select();
+  }
+  else if (act === 'libDelLesson') {
+    if (!confirmTwice(b, 'lib' + b.dataset.id)) return;
+    const next = libClone(), id = b.dataset.id;
+    next.lessons = next.lessons.filter(l => l.id !== id); next.comments = next.comments.filter(c => c.lessonId !== id);
+    S.sel.libItem = ''; await saveLibrary(next); render(true);
+  }
+  else if (act === 'libDelMod') {
+    if (libLessonsOf(b.dataset.id).length || !confirmTwice(b, 'mod' + b.dataset.id)) return;
+    const next = libClone(); next.modules = next.modules.filter(m => m.id !== b.dataset.id);
+    S.sel.libItem = ''; await saveLibrary(next); render(true);
+  }
+  else if (act === 'libAddCm') {
+    const text = $('#newCmText').value.trim(); if (!text) return;
+    const st = await addLibComments(b.dataset.kind, b.dataset.lesson, [{ level: Number($('#newCmLevel').value), comp: $('#newCmComp').value, text }]);
+    setSave('', st.comments ? 'Đã thêm câu vào thư viện' : 'Câu này đã có trong thư viện'); render(true);
+  }
+  else if (act === 'libPaste') {
+    let bad = 0;
+    const list = rowsFromPaste(($('#libPaste').value || '').replace(/\|/g, '\t')).map(cells => {
+      cells = cells.filter(Boolean);
+      const lvCell = cells.find(x => /^(cap( do)?\s*)?\d$/.test(fold(x)));
+      const text = cells[cells.length - 1];
+      if (!lvCell || !text || text === lvCell) { bad++; return null; }
+      return { level: Number(fold(lvCell).match(/\d/)[0]), comp: cells.slice(0, -1).map(compOf).find(Boolean) || '', text };
+    }).filter(Boolean);
+    if (!list.length) { setSave('err', 'Không đọc được dòng nào. Mỗi dòng cần có cấp độ và câu.'); return; }
+    const st = await addLibComments(b.dataset.kind, b.dataset.lesson, list);
+    setSave('', 'Đã thêm ' + st.comments + ' câu' + (st.dup ? ', bỏ qua ' + st.dup + ' câu trùng' : '') + (bad ? ', ' + bad + ' dòng không đọc được' : '')); render(true);
+  }
+  else if (act === 'libDelCm') {
+    if (!confirmTwice(b, 'cm' + b.dataset.id)) return;
+    const next = libClone(); next.comments = next.comments.filter(c => c.id !== b.dataset.id); await saveLibrary(next); render(true);
+  }
+  else if (act === 'libSeed') {
+    const seed = seedLibrary(); if (!seed) return;
+    const { next, st } = mergeLibrary(seed), byKind = {};
+    for (const c of next.comments.slice(lib().comments.length)) byKind[c.kind] = (byKind[c.kind] || 0) + 1;
+    S.ui.libImport = { fileName: 'Thư viện mẫu Arkki', next, st, bad: 0, byKind, sample: [] }; render(true); window.scrollTo(0, 0);
+  }
+  else if (act === 'libImpApply') {
+    const imp = S.ui.libImport; if (!imp) return;
+    S.ui.libImport = null; await saveLibrary(imp.next);
+    setSave('', 'Đã nhập ' + imp.st.lessons + ' bài và ' + imp.st.comments + ' câu vào thư viện'); render(true);
+  }
+  else if (act === 'libImpCancel') { S.ui.libImport = null; render(true); }
+  else if (act === 'submitReport') { await finStep('submit', { status: 'submitted', returned: null, reopened: '' }); Rev.key = ''; }
+  else if (act === 'withdrawReport') { await finStep('withdraw', { status: 'draft' }); Rev.key = ''; }
+  else if (act === 'reopenReport') { const fin = S.records[S.sel.student]?.fin || {}; await finStep('reopen', { status: 'draft', version: repVersion(fin) + 1, reopened: '' }); }
+  else if (act === 'approveOne') {
+    const r = (await approveItems([curItem()]))[0];
+    setSave(r.ok ? '' : 'err', r.ok ? 'Đã duyệt report của ' + r.name : 'Chưa duyệt được ' + r.name + ': ' + r.why);
+    Rev.key = ''; render(true);
+  }
+  else if (act === 'returnOne') { S.ui.ask = { kind: 'return', items: [curItem()], from: 'one' }; render(true); window.scrollTo(0, 0); }
+  else if (act === 'revReload') { Rev.key = ''; Rev.msg = ''; render(true); }
+  else if (act === 'revAll') { Rev.items.filter(i => !i.serious.length && (!Rev.cls || i.cls.id === Rev.cls)).forEach(i => Rev.sel.add(revKey(i))); render(true); }
+  else if (act === 'revView') {
+    const it = Rev.items.find(i => revKey(i) === b.dataset.k); if (!it) return;
+    Object.assign(S.sel, { sem: it.sem.id, school: it.cls.schoolId, cls: it.cls.id, student: it.st.id, tab: 'tonghop' });
+    saveSel(); fixSel(); window.scrollTo(0, 0);
+  }
+  else if (act === 'revApprove' || act === 'revReturn') {
+    const items = Rev.items.filter(i => Rev.sel.has(revKey(i)) && (!Rev.cls || i.cls.id === Rev.cls));
+    if (!items.length) return;
+    if (act === 'revReturn') { S.ui.ask = { kind: 'return', items, from: 'rev' }; render(true); window.scrollTo(0, 0); return; }
+    const res = await approveItems(items);
+    const okKeys = new Set(items.filter((_, i) => res[i].ok).map(revKey)), bad = res.filter(r => !r.ok);
+    Rev.items = Rev.items.filter(i => !okKeys.has(revKey(i))); okKeys.forEach(k => Rev.sel.delete(k));
+    Rev.msg = 'Đã duyệt ' + okKeys.size + ' report.' + (bad.length ? ' Chưa duyệt ' + bad.length + ': ' + bad.map(r => esc(r.name) + ' (' + esc(r.why) + ')').join('; ') + '.' : '');
+    render(true);
   }
   else if (act === 'sugg') {
     const st = b.dataset.st, t = b.textContent.replace(/^\+\s*/, '');
@@ -888,7 +2051,7 @@ $('#view').addEventListener('click', async e => {
     queueNote(st, { s: { [S.sel.lesson]: { note: (cur ? cur.trim() + ' ' : '') + t } } }); flushNote(st); render(true);
   }
   else if (act === 'pickStudent') { S.sel.student = b.dataset.id; saveSel(); render(true); }
-  else if (act === 'prevStudent' || act === 'nextStudent') { const i = S.students.findIndex(s => s.id === S.sel.student) + (act === 'nextStudent' ? 1 : -1); if (S.students[i]) { S.sel.student = S.students[i].id; saveSel(); render(true); } }
+  else if (act === 'prevStudent' || act === 'nextStudent') { const SS = S.students.filter(reportable), i = SS.findIndex(s => s.id === S.sel.student) + (act === 'nextStudent' ? 1 : -1); if (SS[i]) { S.sel.student = SS[i].id; saveSel(); render(true); } }
   else if (act === 'resetText') { patchRecord(S.sel.student, { fin: { textEdited: false, text: '' } }).catch(() => {}); render(true); }
   else if (act === 'reloadStaff') { Staff.loaded = false; render(true); }
   else if (act === 'backup') runBackup();
@@ -928,7 +2091,8 @@ $('#view').addEventListener('click', async e => {
     const id = uid();
     await write(async () => {
       await Store.set('classes', id, { name: src.name, schoolId: S.sel.school, semesterId: S.sel.sem });
-      const sts = (await Store.list('students', 'classId', src.id)).sort(byOrder);
+      // Students who moved away or left during that term do not come along.
+      const sts = (await Store.list('students', 'classId', src.id)).filter(reportable).sort(byOrder);
       for (const [i, st] of sts.entries()) { const nid = uid(); await Store.set('students', nid, { classId: id, name: st.name, code: st.code || '', dob: st.dob || '', order: i + 1, personId: st.personId || st.id }); }
     });
     S.sel.cls = id; saveSel(); fixSel();
@@ -938,7 +2102,14 @@ $('#view').addEventListener('click', async e => {
     const id = b.dataset.id;
     await write(async () => { await Store.del('records', recId(S.sel.cls, id)); await Store.del('students', id); });
   }
-  else if (act === 'importStudents') importStudents($('#pasteStudents').value);
+  else if (act === 'importStudents') {
+    const p = studentRowsFrom(rowsFromPaste($('#pasteStudents').value));
+    if (!p.rows.length) { $('#importMsg').textContent = 'Không đọc được dòng nào. Mỗi dòng cần có họ tên.'; return; }
+    startStudentImport('danh sách dán vào', p); window.scrollTo(0, 0);
+  }
+  else if (act === 'stiSave') await saveStudentImport();
+  else if (act === 'stiCancel') { S.ui.stImp = null; render(true); }
+  else if (act === 'stiAll') { for (const r of S.ui.stImp?.rows || []) r.sel = checkStudentRow(r).level !== 'error'; render(true); }
   else if (act === 'importLessons') importLessons($('#pasteLessons').value);
   else if (act === 'addLesson') { const id = uid(); await write(() => Store.set('lessons', id, { classId: S.sel.cls, order: S.lessons.length + 1, date: '', project: '', content: '' })); }
   else if (act === 'delLesson') { if (confirmTwice(b, 'ls' + b.dataset.id)) await write(() => Store.del('lessons', b.dataset.id)); }
@@ -951,7 +2122,7 @@ $('#view').addEventListener('click', async e => {
       await write(async () => {
         for (const l of old) if (!used.has(l.id)) await Store.del('lessons', l.id);
         const kept = old.filter(l => used.has(l.id));
-        for (const l of S.lessons) if (!kept.some(k => k.date === l.date && k.project === l.project)) await Store.set('lessons', uid(), { classId: t, order: l.order, date: l.date, project: l.project, content: l.content || '' });
+        for (const l of S.lessons) if (!kept.some(k => k.date === l.date && k.project === l.project)) await Store.set('lessons', uid(), { classId: t, order: l.order, date: l.date, project: l.project, content: l.content || '', libId: l.libId || '' });
       });
     }
     if (msg) msg.textContent = 'Đã sao chép cho ' + targets.length + ' lớp.';
@@ -960,7 +2131,64 @@ $('#view').addEventListener('click', async e => {
 
 $('#view').addEventListener('change', async e => {
   const t = e.target, act = t.dataset.act;
-  if (act === 'absent') { patchRecord(t.dataset.st, { s: { [S.sel.lesson]: { absent: t.checked } } }).catch(() => {}); render(true); }
+  if (act === 'onlyTodo') { S.ui.onlyTodo = t.checked; applyChamFilter(); }
+  else if (act === 'tField') {
+    const next = staffClone(), tc = next.teachers.find(x => x.id === t.dataset.id); if (!tc) return;
+    const v = t.value.trim(), k = t.dataset.k;
+    if (k === 'name' && !v) { t.value = tc.name; return; }
+    if (k === 'email' && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || next.teachers.some(x => x.id !== tc.id && fold(x.email) === fold(v)))) { setSave('err', 'Email chưa đúng dạng hoặc đã có tài khoản khác dùng.'); t.value = tc.email || ''; return; }
+    tc[k] = v; saveStaff(next);
+  }
+  else if (act === 'assignT') {
+    const cls = S.classes.find(c => c.id === t.dataset.cls); if (!cls) return;
+    const slot = Number(t.dataset.slot), ids = [(cls.teacherIds || [])[0] || '', (cls.teacherIds || [])[1] || ''], old = ids[slot];
+    if (t.value && ids[1 - slot] === t.value) { setSave('err', 'Giáo viên này đã được chỉ định cho lớp.'); render(true); return; }
+    ids[slot] = t.value;
+    write(() => Store.update('classes', cls.id, { teacherIds: ids, assignLog: [...(cls.assignLog || []), { slot, from: old, to: t.value, ...stamp() }] })).then(() => render(true));
+  }
+  else if (act === 'tmpCls') { S.ui.tmp = { cls: t.value }; render(true); }
+  else if (act === 'mv') { (S.ui.mv ||= {})[t.dataset.k] = t.value; if (t.dataset.k !== 'reason') render(true); }
+  else if (act === 'sf') {
+    const F = S.ui.sf ||= {}, k = t.dataset.k;
+    F[k] = t.type === 'checkbox' ? t.checked : t.value;
+    if (k === 'src') F.start = '';
+    // Any change makes the preview stale; the source or module also changes the form itself.
+    if (k === 'mode' && S.ui.sched) { S.ui.sched.mode = t.value; render(true); }
+    else if (S.ui.sched || k === 'src' || k === 'mod') { S.ui.sched = null; render(true); }
+  }
+  else if (act === 'pickByScore') { S.ui.pickByScore = t.checked; render(true); }
+  else if (act === 'finAll') { S.ui.finAll = t.checked; render(true); }
+  else if (act === 'libModF') { S.ui.libMod = t.value; render(true); }
+  else if (act === 'libClsF') { S.ui.libCls = t.value; render(true); }
+  else if (act === 'libField') {
+    const next = libClone(), l = next.lessons.find(x => x.id === S.sel.libItem); if (!l) return;
+    const k = t.dataset.k, v = k === 'classes' ? t.value.split(/[,;]/).map(s => s.trim()).filter(Boolean) : k === 'goal' ? t.value : k === 'sessions' ? Math.max(1, Math.min(20, Number(t.value) || 1)) : t.value.trim();
+    if (k === 'name' && !v) { t.value = l.name; return; }
+    if (k === 'moduleId' && v !== l.moduleId) l.order = next.lessons.filter(x => x.moduleId === v).length + 1;
+    l[k] = v; saveLibrary(next);
+  }
+  else if (act === 'libModName') { const v = t.value.trim(); if (!v) return; const next = libClone(); next.modules.find(m => m.id === t.dataset.id).name = v; saveLibrary(next); }
+  else if (act === 'libCm') {
+    const next = libClone(), c = next.comments.find(x => x.id === t.dataset.id); if (!c) return;
+    const k = t.dataset.k;
+    if (k === 'level') c.level = Number(t.value);
+    else if (k === 'comp') { if (t.value) c.comp = t.value; else delete c.comp; }
+    else { const v = t.value.replace(/\s+/g, ' ').trim(); if (!v) { t.value = c.text; return; } c.text = v; }
+    saveLibrary(next);
+  }
+  else if (t.id === 'libFile' && t.files[0]) {
+    const f = t.files[0], msg = $('#libMsg'); t.value = '';
+    if (msg) msg.textContent = 'Đang đọc ' + f.name + '…';
+    parseLibraryFile(f, $('#libImpMod')?.value).then(p => { S.ui.libImport = p; render(true); window.scrollTo(0, 0); })
+      .catch(e => { if (msg) msg.textContent = 'Không đọc được file: ' + (e?.message || e); });
+  }
+  else if (act === 'lsLib') {
+    const v = t.value, L = lib().lessons.find(x => x.id === v);
+    write(() => Store.update('lessons', t.dataset.id, L ? { libId: v, project: L.name } : { libId: 'none' }));
+  }
+  else if (act === 'expMode') { S.ui.expMode = t.value; render(true); }
+  else if (act === 'revPick') { if (t.checked) Rev.sel.add(t.dataset.k); else Rev.sel.delete(t.dataset.k); render(true); }
+  else if (act === 'revCls') { Rev.cls = t.value; render(true); }
   else if (act === 'semField') write(() => Store.update('semesters', t.dataset.id, { [t.dataset.k]: t.value.trim() }));
   else if (act === 'clsName') write(() => Store.update('classes', t.dataset.id, { name: t.value.trim() }));
   else if (act === 'schField') updSchool({ [t.dataset.k]: t.dataset.k === 'maxLevel' ? Number(t.value) : t.value.trim() }).then(() => render(true));
@@ -976,7 +2204,23 @@ $('#view').addEventListener('change', async e => {
   else if (act === 'lsField') write(() => Store.update('lessons', t.dataset.id, { [t.dataset.k]: t.value })).then(() => { if (t.dataset.k === 'date') reorderLessons(); });
   else if (act === 'setField') saveSettings({ [t.dataset.k]: t.value });
   else if (act === 'lvField') { const levels = JSON.parse(JSON.stringify(settings().levels)); levels[t.dataset.l][t.dataset.k] = t.value.trim(); saveSettings({ levels }); }
-  else if (t.id === 'fileStudents' && t.files[0]) importStudentsFile(t.files[0]);
+  else if (t.id === 'fileStudents' && t.files[0]) {
+    const f = t.files[0]; t.value = '';
+    readStudentFile(f).then(() => window.scrollTo(0, 0)).catch(e => { const m = $('#importMsg'); if (m) m.textContent = 'Không đọc được file: ' + (e?.message || e); });
+  }
+  else if (act === 'stiSheet') {
+    const imp = S.ui.stImp, i = Number(t.value), c = imp?.sheets?.[i]; if (!c) return;
+    const { sheets, source } = imp; startStudentImport(source, c.p); Object.assign(S.ui.stImp, { sheets, sheet: i }); render(true);
+  }
+  else if (act === 'stiSel') { const r = S.ui.stImp?.rows[Number(t.dataset.i)]; if (r) { r.sel = t.checked; render(true); } }
+  else if (act === 'stiField') {
+    const r = S.ui.stImp?.rows[Number(t.dataset.i)]; if (!r) return;
+    const k = t.dataset.k; r[k] = k === 'name' ? tidyName(t.value) : t.value.trim();
+    // A row fixed by hand is selected again; a class change needs that class's students for the duplicate check.
+    const c = checkStudentRow(r); r.sel = !['error', 'dup'].includes(c.level);
+    if (k === 'cls' && r.cls && !S.ui.stImp.existing[r.cls]) Store.list('students', 'classId', r.cls).then(l => { if (S.ui.stImp) { S.ui.stImp.existing[r.cls] = l; render(true); } });
+    render(true);
+  }
   else if (t.id === 'restoreFile' && t.files[0]) runRestore(t.files[0]);
   else if (act === 'setRole' || act === 'setActive') {
     const patch = act === 'setRole' ? { role: t.value } : { active: t.checked };
@@ -993,7 +2237,9 @@ $('#view').addEventListener('change', async e => {
 $('#view').addEventListener('input', e => {
   const t = e.target, act = t.dataset.act;
   if (t.matches('textarea[data-auto]')) autosize(t);
-  if (act === 'note') queueNote(t.dataset.st, { s: { [S.sel.lesson]: { note: t.value } } });
+  if (act === 'stSearch') { S.ui.q = t.value; applyChamFilter(); }
+  else if (act === 'libQ') { S.ui.libQ = t.value; const pos = t.selectionStart; render(true); const el = $('#libQ'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } }
+  else if (act === 'note') queueNote(t.dataset.st, { s: { [S.sel.lesson]: { note: t.value } } });
   else if (act === 'fin') { queueNote(S.sel.student, { fin: { [t.dataset.k]: t.value } }); refreshFinalPreview(); }
   else if (act === 'finalText') queueNote(S.sel.student, { fin: { text: t.value, textEdited: true } });
 });
@@ -1015,44 +2261,144 @@ async function reorderLessons() {
 
 // ---------- import ----------
 function rowsFromPaste(text) { return text.split(/\r?\n/).map(l => l.split('\t').map(x => x.trim())).filter(r => r.some(Boolean)); }
-async function addStudents(list) {
-  const msg = $('#importMsg');
-  const norm = s => s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
-  const existing = new Map(S.students.map(s => [norm(s.name), s]));
-  let added = 0, updated = 0, order = S.students.length;
+// ---------- student import: read -> check every row -> review -> save on confirmation ----------
+// Decisions 16/11: preview before import, report each row, never merge students by name.
+// Without a header row: guess the columns of one row (name, date of birth, code).
+function parseStudentRow(cells) {
+  cells = cells.map(c => c == null ? '' : String(c).trim());
+  if (cells.length > 1 && /^\d{1,3}$/.test(cells[0])) cells = cells.slice(1);
+  const isCode = c => !/\s/.test(c) && /\d/.test(c) && /[A-Za-z]/.test(c);
+  const name = cells.find(c => /\p{L}/u.test(c) && !/\d/.test(c)) || '';
+  if (/họ.*tên|^tên|^học sinh$/i.test(name)) return null;
+  const dobRaw = cells.find(c => c && !isCode(c) && c !== name && /^\d{1,4}[\/.\-]\d{1,2}[\/.\-]\d{1,4}|^\d{5}$/.test(c)) || '';
+  return { name, dobRaw, code: cells.find(isCode) || '', clsName: '' };
+}
+// Header names seen in Arkki lists: "HỌ VÀ TÊN", "Học sinh", "Mã HS", "NGÀY SINH (dd-mm-yyyy)", "Lớp", or "Họ đệm" + "Tên".
+const ST_HDR = {
+  cls: h => /^lop\b/.test(h),
+  code: h => /^ma\b/.test(h),
+  dob: h => /ngay (thang nam )?sinh|^ns$/.test(h),
+  first: h => /^ho( va)?( ten)? dem$|^ho$/.test(h),
+  last: h => h === 'ten',
+  name: h => /^(hoc sinh|ten hoc sinh)$/.test(h) || (/\bho\b/.test(h) && /\bten\b/.test(h) && !/dem/.test(h)),
+};
+function mapHeader(rows) {
+  for (let i = 0; i < Math.min(rows.length, 15); i++) {
+    const col = {};
+    (rows[i] || []).map(fold).forEach((h, j) => { if (h) for (const [k, f] of Object.entries(ST_HDR)) if (col[k] == null && f(h)) { col[k] = j; break; } });
+    if (col.name != null || (col.first != null && col.last != null)) return { at: i, col };
+  }
+  return null;
+}
+function studentRowsFrom(rows) {
+  const H = mapHeader(rows), cell = (r, j) => j == null ? '' : String(r[j] ?? '').trim();
+  if (!H) return { header: false, rows: rows.map(parseStudentRow).filter(r => r && r.name) };
+  const { col } = H;
+  const out = rows.slice(H.at + 1).map(r => ({
+    name: col.name != null ? cell(r, col.name) : (cell(r, col.first) + ' ' + cell(r, col.last)).trim(),
+    dobRaw: cell(r, col.dob), code: cell(r, col.code), clsName: cell(r, col.cls),
+  })).filter(r => r.name || r.dobRaw || r.code);
+  return { header: true, cols: Object.keys(col), rows: out };
+}
+const validIso = s => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(s + 'T00:00:00Z').toISOString().slice(0, 10) === s;
+// "NGUYỄN VĂN AN" -> "Nguyễn Văn An"; names typed normally are kept as they are.
+const tidyName = s => { s = String(s || '').normalize('NFC').replace(/\s+/g, ' ').trim(); return s && s === s.toUpperCase() && /\p{L}/u.test(s) ? s.toLowerCase().replace(/(^|\s|\()(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : s; };
+function startStudentImport(source, parsed) {
+  const curSem = S.sel.sem, curSch = S.sel.school;
+  const classes = S.classes.filter(c => c.semesterId === curSem && c.schoolId === curSch);
+  const rows = parsed.rows.map((r, i) => {
+    const m = r.clsName ? classes.find(c => fold(c.name) === fold(r.clsName)) : klass();
+    return { i, name: tidyName(r.name), dobRaw: r.dobRaw || '', code: (r.code || '').trim(), clsName: r.clsName || '', cls: m?.id || '', sel: true };
+  });
+  S.ui.stImp = { source, header: parsed.header, cols: parsed.cols || [], rows, existing: {}, loading: true };
+  for (const r of rows) r.sel = !['error', 'dup'].includes(checkStudentRow(r).level);
+  render(true);
+  // Load the students already in every target class, then check duplicates against them.
+  const ids = [...new Set(rows.map(r => r.cls).filter(Boolean))];
+  Promise.all(ids.map(id => Store.list('students', 'classId', id).then(l => [id, l]))).then(list => {
+    const imp = S.ui.stImp; if (!imp) return;
+    imp.existing = Object.fromEntries(list); imp.loading = false;
+    for (const r of imp.rows) r.sel = !['error', 'dup'].includes(checkStudentRow(r).level);
+    render(true);
+  });
+}
+function checkStudentRow(r) {
+  const imp = S.ui.stImp, msgs = [];
+  let level = 'ok';
+  const up = l => { const o = ['ok', 'warn', 'dup', 'error']; if (o.indexOf(l) > o.indexOf(level)) level = l; };
+  if (!r.name) { msgs.push('Thiếu họ tên'); up('error'); }
+  else if (/\d/.test(r.name)) { msgs.push('Tên có chữ số'); up('warn'); }
+  if (!r.cls) { msgs.push(r.clsName ? 'Không có lớp "' + r.clsName + '" ở trường và học kỳ đang chọn' : 'Chưa chọn lớp'); up('error'); }
+  const dob = parseDate(r.dobRaw);
+  if (r.dobRaw && !validIso(dob)) { msgs.push('Ngày sinh "' + r.dobRaw + '" không đọc được'); up('error'); }
+  else if (!r.dobRaw) { msgs.push('Thiếu ngày sinh'); up('warn'); }
+  else { const age = new Date().getFullYear() - Number(dob.slice(0, 4)); if (age < 2 || age > 20) { msgs.push('Ngày sinh ' + fmtDate(dob) + ' lạ với tuổi học sinh'); up('warn'); } }
+  const ex = imp?.existing?.[r.cls] || [];
+  if (r.code && ex.some(s => fold(s.code) === fold(r.code))) { msgs.push('Lớp đã có học sinh mã ' + r.code); up('dup'); }
+  else {
+    const same = ex.filter(s => fold(s.name) === fold(r.name));
+    if (r.name && same.length) { msgs.push('Trùng tên với học sinh đang có' + (r.code && same.some(s => s.code && fold(s.code) !== fold(r.code)) ? ', khác mã' : '') + ': sẽ thêm thành người mới, không gộp'); up('warn'); }
+  }
+  if (r.name && imp?.rows.some(o => o !== r && o.cls === r.cls && fold(o.name) === fold(r.name) && o.i < r.i)) { msgs.push('Lặp lại một dòng phía trên'); up('warn'); }
+  return { level, msgs, dob: validIso(dob) ? dob : '' };
+}
+function studentImportPanel() {
+  const imp = S.ui.stImp; if (!imp) return '';
+  const classes = S.classes.filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
+  const LV = { ok: ['Rõ', 'ok'], warn: ['Cần kiểm tra', 'warn'], dup: ['Đã có', ''], error: ['Lỗi', 'bad'] };
+  const checks = imp.rows.map(checkStudentRow);
+  const n = { ok: 0, warn: 0, dup: 0, error: 0 }; checks.forEach(c => n[c.level]++);
+  const nSave = imp.rows.filter((r, i) => r.sel && checks[i].level !== 'error').length;
+  const byCls = {}; imp.rows.forEach((r, i) => { if (r.sel && checks[i].level !== 'error') byCls[r.cls] = (byCls[r.cls] || 0) + 1; });
+  const rows = imp.rows.map((r, i) => { const c = checks[i];
+    return '<tr' + (c.level === 'error' ? ' style="background:var(--rose-soft)"' : c.level === 'warn' ? ' style="background:var(--warn-soft)"' : '') + '>' +
+      '<td><input type="checkbox" data-act="stiSel" data-i="' + i + '"' + (r.sel && c.level !== 'error' ? ' checked' : '') + (c.level === 'error' ? ' disabled' : '') + ' aria-label="Lưu dòng ' + (i + 1) + '"></td><td class="small muted">' + (i + 1) + '</td>' +
+      '<td><select id="sti-c-' + i + '" data-act="stiField" data-i="' + i + '" data-k="cls"><option value="">— chọn lớp —</option>' + classes.map(k => '<option value="' + k.id + '"' + (k.id === r.cls ? ' selected' : '') + '>' + esc(k.name) + '</option>').join('') + '</select></td>' +
+      '<td><input type="text" id="sti-n-' + i + '" data-act="stiField" data-i="' + i + '" data-k="name" value="' + esc(r.name) + '"></td>' +
+      '<td><input type="text" id="sti-d-' + i + '" data-act="stiField" data-i="' + i + '" data-k="dobRaw" value="' + esc(c.dob ? fmtDate(c.dob) : r.dobRaw) + '" placeholder="dd/mm/yyyy" style="width:110px"></td>' +
+      '<td><input type="text" id="sti-m-' + i + '" data-act="stiField" data-i="' + i + '" data-k="code" value="' + esc(r.code) + '" style="width:110px"></td>' +
+      '<td><span class="pill ' + LV[c.level][1] + '">' + LV[c.level][0] + '</span>' + (c.msgs.length ? '<div class="small">' + c.msgs.map(esc).join('<br>') + '</div>' : '') + '</td></tr>'; }).join('');
+  return '<section class="panel ask" style="display:grid;gap:10px"><h3>Xem lại trước khi lưu · ' + esc(imp.source) + '</h3>' +
+    '<div class="small">' + imp.rows.length + ' dòng: <b>' + n.ok + '</b> rõ, <b>' + n.warn + '</b> cần kiểm tra, <b>' + n.error + '</b> lỗi' + (n.dup ? ', <b>' + n.dup + '</b> đã có trong lớp' : '') + '.' +
+    (imp.header ? ' Đã nhận các cột: ' + imp.cols.map(k => ({ cls: 'Lớp', code: 'Mã', dob: 'Ngày sinh', first: 'Họ đệm', last: 'Tên', name: 'Họ tên' }[k])).join(', ') + '.' : ' Không thấy dòng tiêu đề, app tự đoán cột họ tên, ngày sinh, mã.') +
+    (imp.loading ? ' Đang kiểm tra trùng với danh sách lớp…' : '') + '</div>' +
+    (imp.sheets ? '<label class="field" style="max-width:420px"><span>File có ' + imp.sheets.length + ' sheet chứa tên học sinh, đang đọc sheet</span><select id="stiSheet" data-act="stiSheet">' +
+      imp.sheets.map((s, i) => '<option value="' + i + '"' + (i === imp.sheet ? ' selected' : '') + '>' + esc(s.name) + ' (' + s.p.rows.length + ' dòng' + (s.hidden ? ', sheet ẩn' : '') + ')</option>').join('') + '</select></label>' : '') +
+    '<p class="muted small" style="margin:0">Sửa ngay trong bảng nếu cần. Dòng lỗi không lưu được cho tới khi sửa. Học sinh trùng tên vẫn được thêm thành người mới, app không tự gộp. Dòng trùng mã với học sinh đang có được bỏ chọn sẵn.</p>' +
+    '<div style="overflow-x:auto;max-height:480px" class="edit"><table><thead><tr><th>Lưu</th><th>#</th><th>Lớp</th><th>Họ và tên</th><th>Ngày sinh</th><th>Mã</th><th>Kiểm tra</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="row"><button class="btn pri" data-act="stiSave"' + (nSave && !imp.loading ? '' : ' disabled') + '>Lưu ' + nSave + ' học sinh' + (Object.keys(byCls).length > 1 ? ' vào ' + Object.keys(byCls).length + ' lớp' : '') + '</button>' +
+    '<button class="btn" data-act="stiAll">Chọn mọi dòng không lỗi</button><button class="btn" data-act="stiCancel">Thôi</button></div></section>';
+}
+async function saveStudentImport() {
+  const imp = S.ui.stImp; if (!imp) return;
+  const rows = imp.rows.filter(r => r.sel && checkStudentRow(r).level !== 'error');
+  const order = {}; let n = 0;
   await write(async () => {
-    for (const r of list) {
-      if (!r.name) continue;
-      const ex = existing.get(norm(r.name));
-      if (ex) { const p = {}; if (r.dob && r.dob !== ex.dob) p.dob = r.dob; if (r.code && r.code !== ex.code) p.code = r.code; if (Object.keys(p).length) { await Store.update('students', ex.id, p); updated++; } continue; }
-      const id = uid();
-      await Store.set('students', id, { classId: S.sel.cls, name: r.name.normalize('NFC'), dob: r.dob || '', code: r.code || '', order: ++order });
-      await Store.set('records', recId(S.sel.cls, id), { classId: S.sel.cls, studentId: id, s: {}, fin: {} });
-      existing.set(norm(r.name), { id, name: r.name }); added++;
+    for (const r of rows) {
+      if (order[r.cls] == null) order[r.cls] = (imp.existing[r.cls] || []).length;
+      const id = uid(), dob = checkStudentRow(r).dob;
+      await Store.set('students', id, { classId: r.cls, name: r.name, dob, code: r.code, order: ++order[r.cls] });
+      await Store.set('records', recId(r.cls, id), { classId: r.cls, studentId: id, s: {}, fin: {} });
+      n++;
     }
   });
-  if (msg) msg.textContent = 'Đã thêm ' + added + ' học sinh' + (updated ? ', cập nhật ' + updated : '') + '.';
-  const ta = $('#pasteStudents'); if (ta && added + updated) ta.value = '';
+  S.ui.stImp = null; const ta = $('#pasteStudents'); if (ta) ta.value = '';
+  setSave('', 'Đã thêm ' + n + ' học sinh vào ' + Object.keys(order).length + ' lớp');
+  render(true);
 }
-function parseStudentRow(cells) {
-  cells = cells.map(c => c == null ? '' : (c instanceof Date ? c : String(c).trim()));
-  if (cells.length > 1 && /^\d{1,3}$/.test(cells[0])) cells = cells.slice(1);
-  const isCode = c => typeof c === 'string' && !/\s/.test(c) && /\d/.test(c) && /[A-Za-z]/.test(c);
-  const name = cells.find(c => typeof c === 'string' && /\p{L}/u.test(c) && !/\d/.test(c)) || '';
-  if (/họ.*tên|^tên/i.test(name)) return null;
-  const dobCell = cells.find(c => c instanceof Date || (typeof c === 'string' && !isCode(c) && parseDate(c)));
-  const code = cells.find(isCode) || '';
-  return { name, dob: dobCell ? parseDate(dobCell) : '', code };
+// A workbook may hold the list on any sheet, next to grading sheets that repeat every name many times
+// (Clover files: "Danh sách lớp", "Nhận xét cuối kỳ", one sheet per student, hidden logs). A class list has each name once.
+function sheetScore(s, p) {
+  const names = p.rows.map(r => fold(r.name)).filter(Boolean), uniq = new Set(names).size, dup = names.length - uniq;
+  return (p.header ? 2000 : 0) + (dup ? 0 : 1000) + (/danh sach/.test(fold(s.name)) ? 500 : 0) - (s.hidden ? 1500 : 0) + uniq - 2 * dup - 2 * names.filter(n => /\d/.test(n)).length;
 }
-function importStudents(text) { addStudents(rowsFromPaste(text).map(parseStudentRow).filter(Boolean)); }
-async function importStudentsFile(file) {
-  const msg = $('#importMsg');
-  try {
-    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
-    const ws = wb.worksheets[0]; const out = [];
-    ws.eachRow(row => { const vals = (row.values || []).slice(1).map(v => v && typeof v === 'object' && !(v instanceof Date) ? (v.text ?? v.result ?? '') : v); const r = parseStudentRow(vals); if (r && r.name) out.push(r); });
-    await addStudents(out);
-  } catch (e) { if (msg) msg.textContent = 'Không đọc được file: ' + (e?.message || e); }
+async function readStudentFile(file) {
+  const sheets = await readXlsxRows(await file.arrayBuffer());
+  const cands = sheets.map(s => { const p = studentRowsFrom(s.rows); return { name: s.name, hidden: s.hidden, p, score: sheetScore(s, p) }; })
+    .filter(c => c.p.rows.length).sort((a, b) => b.score - a.score);
+  if (!cands.length) throw new Error('Không thấy danh sách học sinh trong file.');
+  startStudentImport(file.name, cands[0].p);
+  if (cands.length > 1) { S.ui.stImp.sheets = cands; S.ui.stImp.sheet = 0; render(true); }
 }
 async function importLessons(text) {
   const msg = $('#importMsg');
@@ -1158,6 +2504,31 @@ async function startAppInner() {
   subscribeGlobal();
 }
 
+// ---------- trial-mode user picker: the manager, or any teacher account, to try permissions on one machine ----------
+function localMe(v) {
+  if (String(v).startsWith('t:')) { const t = teacherById(v.slice(2)); return { id: v.slice(2), fullName: t?.name || 'Giáo viên', email: t?.email || '', role: 'teacher' }; }
+  return LOCAL_USERS[v] || LOCAL_USERS.manager;
+}
+function renderWho() {
+  if (Store.mode !== 'local') return;
+  const ts = staff();
+  const opts = [['manager', 'Quản lý chuyên môn']].concat(ts.length
+    ? ts.map(t => ['t:' + t.id, 'GV ' + t.name + (t.active === false ? ' (đã khóa)' : '')])
+    : [['teacher', 'Giáo viên (chưa có tài khoản, thấy mọi lớp)']]);
+  let v = lsGet('arkki-me') || 'manager';
+  // Once accounts are loaded, a saved choice that no longer exists falls back to the manager.
+  if (S.staffLoaded && !opts.some(o => o[0] === v)) { v = 'manager'; lsSet('arkki-me', v); }
+  S.me = localMe(v);
+  const w = $('#who'); w.hidden = false;
+  w.innerHTML = '<span class="muted">Dùng thử với vai trò</span><select id="localRole" aria-label="Vai trò dùng thử">' +
+    opts.map(([k, l]) => '<option value="' + esc(k) + '"' + (k === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select>';
+}
+document.addEventListener('change', e => {
+  if (e.target.id !== 'localRole') return;
+  lsSet('arkki-me', e.target.value); S.me = localMe(e.target.value); S.ui.ask = null; S.ui.pick = '';
+  fixSel(); renderCtx(); render(true);
+});
+
 // ---------- boot ----------
 (async () => {
   await Store.init();
@@ -1171,6 +2542,7 @@ async function startAppInner() {
     if (recovering) return showAuth('reset');
     return startApp();
   }
+  renderWho();
   renderCtx(); render(true);
   if (Store.mode === 'db') {
     try { const u = await window.claude.use('user'); const can = u?.can ? await u.can('data.write') : null; if (can === false) { S.canWrite = false; setSave('err', 'Bạn chỉ có quyền xem.'); } } catch {}

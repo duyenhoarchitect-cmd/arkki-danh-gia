@@ -113,7 +113,9 @@ const ArkkiExport = (() => {
       ws.addImage(img.tag, { tl: { col: 1.05, row: 1.83 }, ext: { width: 165, height: 15 } });
       ws.getRow(3).height = 22;
       merge(3, C.proj, 3, C.note);
-      const s3 = ws.getCell(3, C.proj); s3.value = data.semesterLabel; style(s3, { bold: true, h: 'center' });
+      const s3 = ws.getCell(3, C.proj);
+      if (st.draft) { s3.value = data.semesterLabel + '  ·  BẢN NHÁP – CHƯA DUYỆT'; style(s3, { bold: true, color: 'FFC00000', h: 'center' }); }
+      else { s3.value = data.semesterLabel; style(s3, { bold: true, h: 'center' }); }
 
       const head = [[C.stt, C.proj, 'Trường', data.schoolName], [C.c0, C.c0 + k - 1, 'Lớp', data.className], [C.note, C.note, 'Học sinh', st.name]];
       ws.getRow(4).height = 20; ws.getRow(5).height = 30;
@@ -190,7 +192,9 @@ const ArkkiExport = (() => {
       let r = rcEnd + 2;
       const sig = ws.getCell(r, C.note); sig.value = data.signerTitle; style(sig, { bold: true, h: 'center' });
       ws.getRow(r + 1).height = 75;
-      ws.addImage(img.sign, { tl: { col: C.note - 1 + 0.25, row: r + 0.1 }, ext: { width: 150, height: 99 } });
+      // A draft carries no signature: only an approved report is signed.
+      if (st.draft) { const d = ws.getCell(r + 1, C.note); d.value = 'BẢN NHÁP – chưa ký'; style(d, { bold: true, color: 'FFC00000', h: 'center' }); }
+      else ws.addImage(img.sign, { tl: { col: C.note - 1 + 0.25, row: r + 0.1 }, ext: { width: 150, height: 99 } });
       const sn = ws.getCell(r + 2, C.note); sn.value = data.signerName; style(sn, { italic: true, h: 'center' });
       r += 4;
 

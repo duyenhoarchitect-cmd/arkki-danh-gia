@@ -1,5 +1,9 @@
+"""Build the single-file offline app (libraries, sample data and app inlined).
+
+  python scripts/build_offline.py [out.html]   (default: ../arkki-offline.html)
+"""
 import os, json, sys
-R = '/mnt/project-files/app-danh-gia/web-repo'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = os.path.join(R, 'src')
 rd = lambda p: open(p, encoding='utf-8').read()
 src = rd(os.path.join(S, 'app.html'))
@@ -16,8 +20,12 @@ old = '<span class="small muted" id="backupMsg"></span></div>'
 assert old in src
 src = src.replace(old, '<button class="btn" data-act="reset-seed">Nạp lại dữ liệu mẫu</button>' + old)
 
-seed = json.load(open('/mnt/project-files/app-danh-gia/du-lieu-khoi-phuc.json', encoding='utf-8'))
+seed = json.load(open(os.path.join(os.path.dirname(R), 'du-lieu-khoi-phuc.json'), encoding='utf-8'))
 seed_db = {k: seed[k] for k in ('semesters', 'schools', 'classes', 'students', 'lessons', 'records', 'settings') if k in seed}
+# Sample lesson library (built by make_library_seed.py) lives in settings/library.
+lib_path = os.path.join(os.path.dirname(R), 'thu-vien-mau.json')
+if os.path.exists(lib_path):
+    seed_db.setdefault('settings', {})['library'] = json.load(open(lib_path, encoding='utf-8'))
 seed_json = json.dumps(seed_db, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 
 libs = ('<script>' + rd(os.path.join(R, 'vendor', 'exceljs.min.js')) + '</script>\n'
@@ -37,6 +45,6 @@ page = ('<!doctype html>\n<html lang="vi">\n<head>\n<meta charset="utf-8">\n'
         '<link rel="icon" href="data:image/png;base64,' + rd(os.path.join(S, 'img1.b64')).strip() + '">\n'
         '<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>\n</head>\n<body>\n'
         + src.replace('<!--LIBS-->', libs) + '\n</body>\n</html>\n')
-out = sys.argv[1]
-open(out, 'w', encoding='utf-8').write(page)
+out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(R), 'arkki-offline.html')
+open(out, 'w', encoding='utf-8', newline='\n').write(page)
 print('wrote', out, len(page))
