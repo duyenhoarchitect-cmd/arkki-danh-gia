@@ -117,8 +117,12 @@ const ArkkiExport = (() => {
       if (st.draft) { s3.value = data.semesterLabel + '  ·  BẢN NHÁP – CHƯA DUYỆT'; style(s3, { bold: true, color: 'FFC00000', h: 'center' }); }
       else { s3.value = data.semesterLabel; style(s3, { bold: true, h: 'center' }); }
 
-      const head = [[C.stt, C.proj, 'Trường', data.schoolName], [C.c0, C.c0 + k - 1, 'Lớp', data.className], [C.note, C.note, 'Học sinh', st.name]];
-      ws.getRow(4).height = 20; ws.getRow(5).height = 30;
+      // Enrolment: the admission date goes under the name, a transfer under the class.
+      const fmtD = d => d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : '';
+      const stLabel = st.name + (st.enrolledAt ? '\nNhập học: ' + fmtD(st.enrolledAt) : '');
+      const clsLabel = st.classLabel || data.className;
+      const head = [[C.stt, C.proj, 'Trường', data.schoolName], [C.c0, C.c0 + k - 1, 'Lớp', clsLabel], [C.note, C.note, 'Học sinh', stLabel]];
+      ws.getRow(4).height = 20; ws.getRow(5).height = /\n/.test(stLabel + clsLabel) ? 46 : 30;
       for (const [a, b, label, val] of head) {
         if (b > a) { merge(4, a, 4, b); merge(5, a, 5, b); }
         const h = ws.getCell(4, a); h.value = label; style(h, { bold: true, fill: GREEN, h: 'center' });

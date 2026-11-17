@@ -56,6 +56,7 @@ create table if not exists public.students (
 create index if not exists students_class on public.students (class_id);
 -- Enrolment (added 2026-11-17): a transfer keeps the old row (status 'moved') and adds a row in the new class
 -- linked by moved_from / moved_to; person_id joins every enrolment of the same child.
+alter table public.students add column if not exists enrolled_at text;  -- ngày nhập học, đi theo học sinh qua các lớp
 alter table public.students add column if not exists joined_at text;
 alter table public.students add column if not exists left_at text;
 alter table public.students add column if not exists status text;

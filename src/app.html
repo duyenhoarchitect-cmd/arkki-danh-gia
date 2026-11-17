@@ -553,9 +553,11 @@ const HIST = new Map();  // studentId -> { lessons, s } lessons and entries from
 const knowStudents = list => { for (const st of list) STU.set(st.id, st); return list; };
 const reportable = st => st.status !== 'moved' && st.status !== 'left';
 // A student is listed for a lesson only between joining and leaving the class.
+// enrolledAt = admission date (ngày nhập học), kept on every enrolment of the child; joinedAt = first day in this class.
 function enrolledOn(st, date) {
   if (!st) return true;
   if (!date) return reportable(st);
+  if (st.enrolledAt && date < st.enrolledAt) return false;
   if (st.joinedAt && date < st.joinedAt) return false;
   if (st.leftAt && date >= st.leftAt) return false;
   return true;
@@ -644,13 +646,18 @@ function reportOf(st, lessons, rec, sch, sem) {
   rec = rec || {};
   const stats = studentStats(st.id, lessons, rec, comps, true), fin = rec.fin || {};
   const g = genComment(st, stats, sch, sem, fin);
+  const cname = id => S.classes.find(c => c.id === id)?.name || '';
+  const from = st.movedFrom ? cname(st.movedFrom.classId) : '';
   return {
     name: st.name, code: st.code || '', comment: fin.textEdited ? (fin.text || '') : g.text, warnings: g.warnings,
     baseline: stats.baseline, final: stats.final, count: stats.count,
+    enrolledAt: st.enrolledAt || '',
+    // A transferred student's report says where the earlier lessons were taken.
+    classLabel: st.movedFrom ? cname(st.classId) + '\n(từ ' + fmtDate(st.joinedAt) + ', trước đó lớp ' + from + ')' : '',
     rows: activeLessons(lessons).map(l => {
       const e = rec.s?.[l.id] || {}, scores = {};
       if (isPresent(e)) comps.forEach(c => { if (typeof e[c.code] === 'number') scores[c.code] = e[c.code]; });
-      return { date: l.date, project: l.project, note: e.note || '', absent: attOf(e) === 'absent', scores };
+      return { date: l.date, project: l.project + (l.fromClass ? ' (lớp ' + cname(l.fromClass) + ')' : ''), note: e.note || '', absent: attOf(e) === 'absent', scores };
     }),
   };
 }
@@ -987,7 +994,7 @@ function viewTongHop() {
     if (rs in cnt) cnt[rs]++;
     return '<tr class="click' + (st.id === S.sel.student ? ' on' : '') + '" data-act="pickStudent" data-id="' + st.id + '"><td>' + (i + 1) + '</td><td><b>' + esc(st.name) + '</b></td>' +
       comps.map(c => '<td class="v">' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b></td>').join('') +
-      '<td class="v">' + stats.graded + '/' + act.length + '</td>' +
+      '<td class="v">' + stats.graded + '/' + stats.nLessons + '</td>' +
       '<td>' + (ss.done ? '<span class="pill ok">Đã xong</span>' : '<span class="pill warn" title="' + esc(ss.why.join('; ')) + '">Chưa xong</span>') + (fin.textEdited ? ' <span class="pill">Sửa tay</span>' : '') + '</td>' +
       '<td>' + repPill(fin) + '</td></tr>';
   }).join('');
@@ -1025,17 +1032,19 @@ function viewTongHop() {
   const ACT = { submit: 'Gửi duyệt', withdraw: 'Rút lại', approve: 'Duyệt', return: 'Trả lại', reopen: 'Mở lại để sửa', 'auto-reopen': 'Tự về nháp vì điểm đổi' };
   if (H.length) stBox += '<details><summary class="small">Lịch sử report (' + H.length + ')</summary><ul class="hist">' + H.slice().reverse().map(h => '<li>' + esc(fmtWhen(h.at)) + ' · ' + esc(ACT[h.act] || h.act) + (h.version ? ' v' + h.version : '') + ' · ' + esc(h.by) + (h.reason ? ' · "' + esc(h.reason) + '"' : '') + '</li>').join('') + '</ul></details>';
 
-  return '<section class="panel"><div class="row"><div class="grow"><h2>Tổng hợp lớp ' + esc(klass()?.name) + '</h2><div class="muted small">Đầu kỳ = buổi đầu tiên · Cuối kỳ = trung bình ' + nL + ' buổi sau đó' + (nCancel ? ' (không tính ' + nCancel + ' buổi đã hủy)' : '') + ', bỏ qua buổi vắng, chưa rõ và ô trống.</div>' +
+  return '<section class="panel"><div class="row"><div class="grow"><h2>Tổng hợp lớp ' + esc(klass()?.name) + '</h2><div class="muted small">Đầu kỳ = buổi đầu tiên · Cuối kỳ = trung bình ' + nL + ' buổi sau đó' + (nCancel ? ' (không tính ' + nCancel + ' buổi đã hủy)' : '') + ', bỏ qua buổi vắng, chưa rõ và ô trống. Học sinh nhập học hoặc chuyển đến giữa kỳ chỉ tính các buổi từ ngày đó, và mốc đầu kỳ là buổi đầu tiên em học.</div>' +
     '<div class="small" style="margin-top:4px">Đã xong ' + cnt.done + '/' + SS.length + ' · Chờ duyệt ' + cnt.submitted + ' · Đã duyệt ' + cnt.approved + (cnt.returned ? ' · Bị trả lại ' + cnt.returned : '') + '</div>' +
     (gone ? '<div class="muted small">' + gone + ' học sinh đã chuyển lớp hoặc thôi học không có trong tổng hợp và báo cáo của lớp này.</div>' : '') + '</div></div>' +
     expPanel + '</section>' +
     '<div class="sheet sum"><table><thead><tr><th>#</th><th>Học sinh</th>' + comps.map(c => '<th>' + esc(c.name) + '</th>').join('') + '<th>Buổi đủ điểm</th><th>Tình trạng</th><th>Report</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(st.name) + '</h2><div class="muted small">' + esc(st.code || '') + ' · ' + esc(klass()?.name) + ' · ' + esc(school()?.name) + '</div></div>' +
+    '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(st.name) + '</h2><div class="muted small">' + esc(st.code || '') + ' · ' + esc(klass()?.name) + ' · ' + esc(school()?.name) +
+    (st.enrolledAt ? ' · Nhập học ' + esc(fmtDate(st.enrolledAt)) : '') +
+    (st.movedFrom ? ' · Chuyển từ lớp ' + esc(S.classes.find(c => c.id === st.movedFrom.classId)?.name || 'khác') + ' ngày ' + esc(fmtDate(st.joinedAt)) + ' (báo cáo gộp cả các buổi ở lớp cũ)' : '') + '</div></div>' +
     '<button class="btn" data-act="prevStudent"' + (idx === 0 ? ' disabled' : '') + '>← Học sinh trước</button><button class="btn" data-act="nextStudent"' + (idx === SS.length - 1 ? ' disabled' : '') + '>Học sinh sau →</button>' +
     '<button class="btn" data-act="exportOne">Xuất Excel học sinh này</button></div>' +
     '<div class="status-box" style="margin-top:12px">' + stBox + '</div>' +
     '<div class="detail" style="margin-top:14px"><div><div class="radar" id="radar"></div><div class="legend"><span><i style="background:var(--base)"></i>Đầu kỳ</span><span><i style="background:var(--leaf)"></i>Cuối kỳ (trung bình ' + nL + ' buổi)</span></div>' +
-    '<dl class="kv" style="margin-top:12px">' + comps.map(c => '<dt>' + esc(c.name) + '</dt><dd>' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b> <span class="muted small">(n = ' + stats.count[c.code] + '/' + nL + ' buổi)</span></dd>').join('') + '</dl></div>' +
+    '<dl class="kv" style="margin-top:12px">' + comps.map(c => '<dt>' + esc(c.name) + '</dt><dd>' + fmtNum(stats.baseline[c.code]) + ' → <b>' + fmt2(stats.final[c.code]) + '</b> <span class="muted small">(n = ' + stats.count[c.code] + '/' + Math.max(0, stats.nLessons - 1) + ' buổi)</span></dd>').join('') + '</dl></div>' +
     '<div style="display:grid;gap:12px;min-width:0"><div class="fields">' +
     field('general', 'Nhận xét chung', 'Ví dụ: Bạn năng nổ trong học tập…') + field('positive', 'Điểm tích cực', 'Điều học sinh làm tốt…') +
     field('develop', 'Nội dung cần phát triển', 'Điều học sinh có thể làm tốt hơn…') + field('suggest', 'Đề xuất phát triển', 'Gợi ý cho học kỳ tới…') + '</div>' +
@@ -1332,7 +1341,7 @@ function movePanel(st) {
     '<label class="field"><span>' + (kind === 'move' ? 'Học ở lớp mới từ ngày' : 'Thôi học từ ngày') + '</span><input type="date" id="mv-date" data-act="mv" data-k="date" value="' + esc(date) + '"></label>' +
     '<label class="field" style="flex:1 1 200px"><span>Lý do</span><input type="text" id="mv-reason" data-act="mv" data-k="reason" value="' + esc(F.reason || '') + '" placeholder="' + (kind === 'move' ? 'Ví dụ: đổi ca học' : 'Ví dụ: chuyển trường') + '"></label></div>' +
     '<div class="small">' + (kind === 'move'
-      ? 'Từ ngày ' + esc(fmtDate(date)) + ', học sinh có tên trong lớp ' + esc(to?.name || 'mới') + '. Điểm, điểm danh và nhận xét các buổi trước ngày này ở lớp ' + esc(cls.name) + ' được giữ nguyên và được tính vào báo cáo cuối kỳ ở lớp mới (buổi đầu tiên ở lớp cũ vẫn là mốc đầu kỳ). Ở lớp ' + esc(cls.name) + ', học sinh không còn trong danh sách chấm từ ngày này và không có báo cáo riêng. Nhận xét cuối kỳ do giáo viên lớp mới viết.'
+      ? 'Từ ngày ' + esc(fmtDate(date)) + ', học sinh có tên trong lớp ' + esc(to?.name || 'mới') + '. Điểm, điểm danh và nhận xét các buổi trước ngày này ở lớp ' + esc(cls.name) + ' được giữ nguyên và được tính vào báo cáo cuối kỳ ở lớp mới (buổi đầu tiên ở lớp cũ vẫn là mốc đầu kỳ). Ở lớp ' + esc(cls.name) + ', học sinh không còn trong danh sách chấm từ ngày này và không có báo cáo riêng. Nhận xét cuối kỳ do giáo viên lớp mới viết.' + (st.enrolledAt ? ' Ngày nhập học ' + esc(fmtDate(st.enrolledAt)) + ' được giữ nguyên ở lớp mới.' : '')
       : 'Từ ngày ' + esc(fmtDate(date)) + ', học sinh không còn trong danh sách chấm và báo cáo của lớp. Điểm các buổi trước được giữ; bấm "Học lại" để đưa học sinh về lớp.') + '</div>' +
     '<div class="row"><button class="btn pri" data-act="stMoveOk" data-id="' + st.id + '">' + (kind === 'move' ? 'Chuyển lớp' : 'Xác nhận thôi học') + '</button><button class="btn" data-act="stMoveCancel">Thôi</button><span class="small" id="mvMsg" style="color:var(--bad)"></span></div></div>';
 }
@@ -1368,7 +1377,8 @@ async function moveStudent(st, F) {
   if (there.some(x => reportable(x) && (x.personId || x.id) === pid)) throw new Error('Học sinh này đã có trong lớp ' + to.name + '.');
   const newId = uid();
   await write(async () => {
-    await Store.set('students', newId, { classId: to.id, name: st.name, code: st.code || '', dob: st.dob || '', order: there.length + 1, personId: pid, joinedAt: date, movedFrom: { classId: cls.id, studentId: st.id, at: date } });
+    // The admission date follows the child; the transfer date becomes the first day in the new class.
+    await Store.set('students', newId, { classId: to.id, name: st.name, code: st.code || '', dob: st.dob || '', order: there.length + 1, personId: pid, joinedAt: date, movedFrom: { classId: cls.id, studentId: st.id, at: date }, ...(st.enrolledAt ? { enrolledAt: st.enrolledAt } : {}) });
     await Store.set('records', recId(to.id, newId), { classId: to.id, studentId: newId, s: {}, fin: {} });
     await Store.update('students', st.id, { status: 'moved', leftAt: date, personId: pid, movedTo: { classId: to.id, studentId: newId, at: date, reason: F.reason || '', ...stamp() } });
   });
@@ -1391,7 +1401,9 @@ function catHocSinh() {
   const status = st => st.status === 'moved' ? '<span class="pill">Đã chuyển sang ' + esc(cn(st.movedTo?.classId)) + ' từ ' + esc(fmtD(st.leftAt)) + '</span>'
     : st.status === 'left' ? '<span class="pill">Thôi học từ ' + esc(fmtD(st.leftAt)) + '</span>'
     : st.movedFrom ? '<span class="pill blue">Chuyển đến từ ' + esc(cn(st.movedFrom.classId)) + ', ' + esc(fmtD(st.joinedAt)) + '</span>'
-    : st.joinedAt ? '<span class="pill blue">Vào lớp từ ' + esc(fmtD(st.joinedAt)) + '</span>' : '<span class="pill ok">Đang học</span>';
+    : st.joinedAt ? '<span class="pill blue">Vào lớp từ ' + esc(fmtD(st.joinedAt)) + '</span>'
+    : st.enrolledAt && S.lessons.some(l => l.date && !l.cancelled && l.date < st.enrolledAt) ? '<span class="pill blue">Nhập học giữa kỳ, từ ' + esc(fmtD(st.enrolledAt)) + '</span>'
+    : '<span class="pill ok">Đang học</span>';
   const acts = st => (st.status === 'moved' ? '<button class="btn small" data-act="stMoveUndo" data-id="' + st.id + '">Hủy chuyển lớp</button>'
     : st.status === 'left' ? '<button class="btn small" data-act="stReturn" data-id="' + st.id + '">Học lại</button>'
     : '<button class="btn small" data-act="stMoveOpen" data-id="' + st.id + '">Chuyển lớp / thôi học…</button>') +
@@ -1399,15 +1411,16 @@ function catHocSinh() {
   const rows = S.students.map((st, i) => '<tr' + (reportable(st) ? '' : ' style="opacity:.6"') + '><td class="small muted">' + (i + 1) + '</td><td><input type="text" id="st-n-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="name" value="' + esc(st.name) + '"></td>' +
     '<td><input type="text" id="st-c-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="code" value="' + esc(st.code || '') + '"></td>' +
     '<td><input type="date" id="st-d-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="dob" value="' + esc(st.dob || '') + '"></td>' +
+    '<td><input type="date" id="st-e-' + st.id + '" data-act="stField" data-id="' + st.id + '" data-k="enrolledAt" value="' + esc(st.enrolledAt || '') + '"></td>' +
     '<td>' + status(st) + '<div class="row" style="margin-top:4px">' + acts(st) + '</div></td>' +
     '<td><button class="btn danger" data-act="delStudent" data-id="' + st.id + '">Xóa</button></td></tr>' +
-    (S.ui.move === st.id ? '<tr><td colspan="6">' + movePanel(st) + '</td></tr>' : '') +
-    (S.ui.hist === st.id ? '<tr><td colspan="6">' + histPanel(st) + '</td></tr>' : '')).join('');
+    (S.ui.move === st.id ? '<tr><td colspan="7">' + movePanel(st) + '</td></tr>' : '') +
+    (S.ui.hist === st.id ? '<tr><td colspan="7">' + histPanel(st) + '</td></tr>' : '')).join('');
   return studentImportPanel() + '<section class="panel edit" style="display:grid;gap:12px"><div class="row"><h3 class="grow">Học sinh lớp ' + esc(klass()?.name) + ' (' + S.students.length + ')</h3></div>' +
-    (S.students.length ? '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Họ và tên</th><th>Mã học sinh</th><th>Ngày sinh</th><th>Tình trạng</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Lớp chưa có học sinh</b>Dán danh sách từ Excel hoặc tải file lên ở dưới.</div>') +
+    (S.students.length ? '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Họ và tên</th><th>Mã học sinh</th><th>Ngày sinh</th><th>Ngày nhập học</th><th>Tình trạng</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<div class="empty"><b>Lớp chưa có học sinh</b>Dán danh sách từ Excel hoặc tải file lên ở dưới.</div>') +
     '</section>' +
     '<section class="panel" style="display:grid;gap:10px"><h3>Thêm học sinh</h3>' +
-    '<p class="muted small" style="margin:0">Dán từ Excel (mỗi dòng một học sinh, có thể kèm dòng tiêu đề) hoặc chọn file. App tự nhận các cột <b>Lớp</b>, <b>Họ và tên</b> (hoặc Họ đệm + Tên), <b>Ngày sinh</b>, <b>Mã học sinh</b>; không có cột Lớp thì học sinh vào lớp ' + esc(klass()?.name) + '. Có cột Lớp thì nhập được nhiều lớp cùng lúc. Bạn xem lại từng dòng rồi mới lưu.</p>' +
+    '<p class="muted small" style="margin:0">Dán từ Excel (mỗi dòng một học sinh, có thể kèm dòng tiêu đề) hoặc chọn file. App tự nhận các cột <b>Lớp</b>, <b>Họ và tên</b> (hoặc Họ đệm + Tên), <b>Ngày sinh</b>, <b>Ngày nhập học</b>, <b>Mã học sinh</b>; học sinh nhập học giữa kỳ chỉ có tên và được tính điểm ở các buổi từ ngày nhập học; không có cột Lớp thì học sinh vào lớp ' + esc(klass()?.name) + '. Có cột Lớp thì nhập được nhiều lớp cùng lúc. Bạn xem lại từng dòng rồi mới lưu.</p>' +
     '<textarea id="pasteStudents" rows="6" placeholder="Lớp&#9;Họ và tên&#9;Ngày sinh&#9;Mã HS&#10;' + esc(klass()?.name || 'Arkki 1') + '&#9;Nguyễn Văn An&#9;12/03/2021&#9;HS001"></textarea>' +
     '<div class="row"><button class="btn pri" data-act="importStudents">Đọc danh sách</button><label class="btn">Chọn file Excel…<input type="file" id="fileStudents" accept=".xlsx" hidden></label><span class="small" id="importMsg" style="color:var(--bad)"></span></div>' +
     '<p class="muted small" style="margin:0">Nhập từ ảnh chụp danh sách bằng AI cần máy chủ, sẽ làm khi bật lại bản web.</p></section>';
@@ -2093,7 +2106,7 @@ $('#view').addEventListener('click', async e => {
       await Store.set('classes', id, { name: src.name, schoolId: S.sel.school, semesterId: S.sel.sem });
       // Students who moved away or left during that term do not come along.
       const sts = (await Store.list('students', 'classId', src.id)).filter(reportable).sort(byOrder);
-      for (const [i, st] of sts.entries()) { const nid = uid(); await Store.set('students', nid, { classId: id, name: st.name, code: st.code || '', dob: st.dob || '', order: i + 1, personId: st.personId || st.id }); }
+      for (const [i, st] of sts.entries()) { const nid = uid(); await Store.set('students', nid, { classId: id, name: st.name, code: st.code || '', dob: st.dob || '', order: i + 1, personId: st.personId || st.id, ...(st.enrolledAt ? { enrolledAt: st.enrolledAt } : {}) }); }
     });
     S.sel.cls = id; saveSel(); fixSel();
   }
@@ -2278,6 +2291,7 @@ const ST_HDR = {
   cls: h => /^lop\b/.test(h),
   code: h => /^ma\b/.test(h),
   dob: h => /ngay (thang nam )?sinh|^ns$/.test(h),
+  enrol: h => /ngay nhap hoc|ngay vao (truong|hoc|lop)|nhap hoc tu/.test(h),
   first: h => /^ho( va)?( ten)? dem$|^ho$/.test(h),
   last: h => h === 'ten',
   name: h => /^(hoc sinh|ten hoc sinh)$/.test(h) || (/\bho\b/.test(h) && /\bten\b/.test(h) && !/dem/.test(h)),
@@ -2296,11 +2310,12 @@ function studentRowsFrom(rows) {
   const { col } = H;
   const out = rows.slice(H.at + 1).map(r => ({
     name: col.name != null ? cell(r, col.name) : (cell(r, col.first) + ' ' + cell(r, col.last)).trim(),
-    dobRaw: cell(r, col.dob), code: cell(r, col.code), clsName: cell(r, col.cls),
+    dobRaw: cell(r, col.dob), code: cell(r, col.code), clsName: cell(r, col.cls), enrolRaw: cell(r, col.enrol),
   })).filter(r => r.name || r.dobRaw || r.code);
   return { header: true, cols: Object.keys(col), rows: out };
 }
-const validIso = s => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(s + 'T00:00:00Z').toISOString().slice(0, 10) === s;
+// Rejects impossible dates (31/02 rolls over, 40/10 is not a date at all) without throwing.
+const validIso = s => { if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + 'T00:00:00Z'); return !isNaN(d) && d.toISOString().slice(0, 10) === s; };
 // "NGUYỄN VĂN AN" -> "Nguyễn Văn An"; names typed normally are kept as they are.
 const tidyName = s => { s = String(s || '').normalize('NFC').replace(/\s+/g, ' ').trim(); return s && s === s.toUpperCase() && /\p{L}/u.test(s) ? s.toLowerCase().replace(/(^|\s|\()(\p{L})/gu, (m, a, b) => a + b.toUpperCase()) : s; };
 function startStudentImport(source, parsed) {
@@ -2308,7 +2323,7 @@ function startStudentImport(source, parsed) {
   const classes = S.classes.filter(c => c.semesterId === curSem && c.schoolId === curSch);
   const rows = parsed.rows.map((r, i) => {
     const m = r.clsName ? classes.find(c => fold(c.name) === fold(r.clsName)) : klass();
-    return { i, name: tidyName(r.name), dobRaw: r.dobRaw || '', code: (r.code || '').trim(), clsName: r.clsName || '', cls: m?.id || '', sel: true };
+    return { i, name: tidyName(r.name), dobRaw: r.dobRaw || '', enrolRaw: r.enrolRaw || '', code: (r.code || '').trim(), clsName: r.clsName || '', cls: m?.id || '', sel: true };
   });
   S.ui.stImp = { source, header: parsed.header, cols: parsed.cols || [], rows, existing: {}, loading: true };
   for (const r of rows) r.sel = !['error', 'dup'].includes(checkStudentRow(r).level);
@@ -2333,6 +2348,16 @@ function checkStudentRow(r) {
   if (r.dobRaw && !validIso(dob)) { msgs.push('Ngày sinh "' + r.dobRaw + '" không đọc được'); up('error'); }
   else if (!r.dobRaw) { msgs.push('Thiếu ngày sinh'); up('warn'); }
   else { const age = new Date().getFullYear() - Number(dob.slice(0, 4)); if (age < 2 || age > 20) { msgs.push('Ngày sinh ' + fmtDate(dob) + ' lạ với tuổi học sinh'); up('warn'); } }
+  // Admission date: lessons before it are not listed for the student and not counted in the report.
+  const enrol = parseDate(r.enrolRaw);
+  if (r.enrolRaw && !validIso(enrol)) { msgs.push('Ngày nhập học "' + r.enrolRaw + '" không đọc được'); up('error'); }
+  else if (validIso(enrol)) {
+    if (enrol > todayStr()) { msgs.push('Ngày nhập học ' + fmtDate(enrol) + ' ở tương lai'); up('warn'); }
+    if (validIso(dob) && enrol <= dob) { msgs.push('Ngày nhập học trước ngày sinh'); up('error'); }
+    const ls = r.cls === S.sel.cls ? S.lessons.filter(l => l.date && !l.cancelled) : [];
+    const after = ls.filter(l => l.date >= enrol).length;
+    if (ls.length && after < ls.length) { msgs.push(after ? 'Nhập học giữa kỳ: chỉ tính ' + after + '/' + ls.length + ' buổi, mốc đầu kỳ là buổi đầu tiên từ ' + fmtDate(enrol) : 'Nhập học sau buổi cuối của lớp: sẽ không có tên ở buổi nào'); up('warn'); }
+  }
   const ex = imp?.existing?.[r.cls] || [];
   if (r.code && ex.some(s => fold(s.code) === fold(r.code))) { msgs.push('Lớp đã có học sinh mã ' + r.code); up('dup'); }
   else {
@@ -2340,7 +2365,7 @@ function checkStudentRow(r) {
     if (r.name && same.length) { msgs.push('Trùng tên với học sinh đang có' + (r.code && same.some(s => s.code && fold(s.code) !== fold(r.code)) ? ', khác mã' : '') + ': sẽ thêm thành người mới, không gộp'); up('warn'); }
   }
   if (r.name && imp?.rows.some(o => o !== r && o.cls === r.cls && fold(o.name) === fold(r.name) && o.i < r.i)) { msgs.push('Lặp lại một dòng phía trên'); up('warn'); }
-  return { level, msgs, dob: validIso(dob) ? dob : '' };
+  return { level, msgs, dob: validIso(dob) ? dob : '', enrol: validIso(enrol) ? enrol : '' };
 }
 function studentImportPanel() {
   const imp = S.ui.stImp; if (!imp) return '';
@@ -2356,16 +2381,17 @@ function studentImportPanel() {
       '<td><select id="sti-c-' + i + '" data-act="stiField" data-i="' + i + '" data-k="cls"><option value="">— chọn lớp —</option>' + classes.map(k => '<option value="' + k.id + '"' + (k.id === r.cls ? ' selected' : '') + '>' + esc(k.name) + '</option>').join('') + '</select></td>' +
       '<td><input type="text" id="sti-n-' + i + '" data-act="stiField" data-i="' + i + '" data-k="name" value="' + esc(r.name) + '"></td>' +
       '<td><input type="text" id="sti-d-' + i + '" data-act="stiField" data-i="' + i + '" data-k="dobRaw" value="' + esc(c.dob ? fmtDate(c.dob) : r.dobRaw) + '" placeholder="dd/mm/yyyy" style="width:110px"></td>' +
+      '<td><input type="text" id="sti-e-' + i + '" data-act="stiField" data-i="' + i + '" data-k="enrolRaw" value="' + esc(c.enrol ? fmtDate(c.enrol) : r.enrolRaw) + '" placeholder="dd/mm/yyyy" style="width:110px"></td>' +
       '<td><input type="text" id="sti-m-' + i + '" data-act="stiField" data-i="' + i + '" data-k="code" value="' + esc(r.code) + '" style="width:110px"></td>' +
       '<td><span class="pill ' + LV[c.level][1] + '">' + LV[c.level][0] + '</span>' + (c.msgs.length ? '<div class="small">' + c.msgs.map(esc).join('<br>') + '</div>' : '') + '</td></tr>'; }).join('');
   return '<section class="panel ask" style="display:grid;gap:10px"><h3>Xem lại trước khi lưu · ' + esc(imp.source) + '</h3>' +
     '<div class="small">' + imp.rows.length + ' dòng: <b>' + n.ok + '</b> rõ, <b>' + n.warn + '</b> cần kiểm tra, <b>' + n.error + '</b> lỗi' + (n.dup ? ', <b>' + n.dup + '</b> đã có trong lớp' : '') + '.' +
-    (imp.header ? ' Đã nhận các cột: ' + imp.cols.map(k => ({ cls: 'Lớp', code: 'Mã', dob: 'Ngày sinh', first: 'Họ đệm', last: 'Tên', name: 'Họ tên' }[k])).join(', ') + '.' : ' Không thấy dòng tiêu đề, app tự đoán cột họ tên, ngày sinh, mã.') +
+    (imp.header ? ' Đã nhận các cột: ' + imp.cols.map(k => ({ cls: 'Lớp', code: 'Mã', dob: 'Ngày sinh', enrol: 'Ngày nhập học', first: 'Họ đệm', last: 'Tên', name: 'Họ tên' }[k])).join(', ') + '.' : ' Không thấy dòng tiêu đề, app tự đoán cột họ tên, ngày sinh, mã.') +
     (imp.loading ? ' Đang kiểm tra trùng với danh sách lớp…' : '') + '</div>' +
     (imp.sheets ? '<label class="field" style="max-width:420px"><span>File có ' + imp.sheets.length + ' sheet chứa tên học sinh, đang đọc sheet</span><select id="stiSheet" data-act="stiSheet">' +
       imp.sheets.map((s, i) => '<option value="' + i + '"' + (i === imp.sheet ? ' selected' : '') + '>' + esc(s.name) + ' (' + s.p.rows.length + ' dòng' + (s.hidden ? ', sheet ẩn' : '') + ')</option>').join('') + '</select></label>' : '') +
     '<p class="muted small" style="margin:0">Sửa ngay trong bảng nếu cần. Dòng lỗi không lưu được cho tới khi sửa. Học sinh trùng tên vẫn được thêm thành người mới, app không tự gộp. Dòng trùng mã với học sinh đang có được bỏ chọn sẵn.</p>' +
-    '<div style="overflow-x:auto;max-height:480px" class="edit"><table><thead><tr><th>Lưu</th><th>#</th><th>Lớp</th><th>Họ và tên</th><th>Ngày sinh</th><th>Mã</th><th>Kiểm tra</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div style="overflow-x:auto;max-height:480px" class="edit"><table><thead><tr><th>Lưu</th><th>#</th><th>Lớp</th><th>Họ và tên</th><th>Ngày sinh</th><th>Ngày nhập học</th><th>Mã</th><th>Kiểm tra</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<div class="row"><button class="btn pri" data-act="stiSave"' + (nSave && !imp.loading ? '' : ' disabled') + '>Lưu ' + nSave + ' học sinh' + (Object.keys(byCls).length > 1 ? ' vào ' + Object.keys(byCls).length + ' lớp' : '') + '</button>' +
     '<button class="btn" data-act="stiAll">Chọn mọi dòng không lỗi</button><button class="btn" data-act="stiCancel">Thôi</button></div></section>';
 }
@@ -2376,8 +2402,8 @@ async function saveStudentImport() {
   await write(async () => {
     for (const r of rows) {
       if (order[r.cls] == null) order[r.cls] = (imp.existing[r.cls] || []).length;
-      const id = uid(), dob = checkStudentRow(r).dob;
-      await Store.set('students', id, { classId: r.cls, name: r.name, dob, code: r.code, order: ++order[r.cls] });
+      const id = uid(), { dob, enrol } = checkStudentRow(r);
+      await Store.set('students', id, { classId: r.cls, name: r.name, dob, code: r.code, order: ++order[r.cls], ...(enrol ? { enrolledAt: enrol } : {}) });
       await Store.set('records', recId(r.cls, id), { classId: r.cls, studentId: id, s: {}, fin: {} });
       n++;
     }
