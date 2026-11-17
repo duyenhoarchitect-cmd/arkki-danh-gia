@@ -17,7 +17,8 @@ dist = os.path.join(ROOT, 'dist')
 os.makedirs(dist, exist_ok=True)
 if target == 'web':
     libs = ('<script src="vendor/exceljs.min.js"></script>\n<script src="vendor/jszip.min.js"></script>\n'
-            '<script src="vendor/supabase.js"></script>\n<script src="config.js"></script>')
+            # supabase-js is not vendored: load the pinned UMD build from jsDelivr.
+            '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n<script src="config.js"></script>')
     page = ('<!doctype html>\n<html lang="vi">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
             '<link rel="icon" href="data:image/png;base64,' + open(os.path.join(ROOT, 'src', 'img1.b64')).read().strip() + '">\n'
