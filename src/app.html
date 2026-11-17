@@ -211,6 +211,13 @@ textarea[readonly] { background: var(--sunk); color: var(--muted); }
 .cm td textarea { min-height: 40px; }
 .cm td select { width: auto; }
 .goal { white-space: pre-line; }
+
+/* notices wall */
+.notice { display: grid; gap: 8px; }
+.notice.pinned { border-left: 4px solid var(--leaf); }
+.notice.unread { border-color: var(--rose); box-shadow: 0 0 0 1px var(--rose); }
+.nbody { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.nbody a { color: var(--base); }
 @media (prefers-reduced-motion: no-preference) { .lesson .bar i { transition: width .3s ease; } }
 @media (max-width: 640px) {
   .sheet table, .sheet thead, .sheet tbody, .sheet tr, .sheet td { display: block; min-width: 0; }
@@ -240,6 +247,7 @@ textarea[readonly] { background: var(--sunk); color: var(--muted); }
       <button role="tab" data-tab="cham">Chấm điểm</button>
       <button role="tab" data-tab="tonghop">Tổng hợp &amp; nhận xét cuối kỳ</button>
       <button role="tab" data-tab="duyet">Duyệt report</button>
+      <button role="tab" data-tab="thongbao">Thông báo</button>
       <button role="tab" data-tab="danhmuc">Danh mục</button>
       <button role="tab" data-tab="caidat">Cài đặt mẫu in</button>
     </nav>
@@ -405,7 +413,7 @@ const S = {
   ui: { q: '', onlyTodo: false, expMode: 'approved', ask: null,
     libQ: '', libMod: '', libCls: '', libComp: '', libLevel: '', libImport: null,
     pick: '', pickComp: '', pickByScore: true, finPick: '', finAll: false },
-  library: null, staff: null, staffLoaded: false,
+  library: null, staff: null, staffLoaded: false, notices: null,
 };
 const saveSel = () => lsSet('arkki-sel', S.sel);
 // Trial mode (browser storage) simulates one user so both roles can be tried on one machine.
@@ -442,6 +450,25 @@ const isTrialTeacher = () => Store.mode === 'local' && myRole() === 'teacher' &&
 const meLocked = () => isTrialTeacher() && teacherById(S.me.id)?.active === false;
 // Classes the current user may open. Supabase filters on the server; staff and the generic trial teacher see every class.
 const visClasses = () => !isTrialTeacher() || isStaff() ? S.classes : meLocked() ? [] : S.classes.filter(c => accessOf(c, S.me.id));
+// ---------- notices (settings/notices): managers post, teachers read them on their wall ----------
+// item: {id, title, body, to: {kind: all|school|class|teachers, schoolId, classId, teacherIds}, pinned, until, by, byId, at, editedAt, readBy: {teacherId: iso}}
+const notices = () => S.notices?.items || [];
+const noticeLive = n => !n.until || todayStr() <= n.until;
+function noticeFor(n, tid) {
+  if (!tid) return false;
+  if (tid === 'local-teacher') return true;
+  const a = n.to || { kind: 'all' };
+  // Supabase already limits S.classes to the teacher's classes; the trial mode checks the assignment.
+  const reach = c => !!c && (Store.mode === 'supabase' ? true : !!accessOf(c, tid));
+  if (a.kind === 'school') return S.classes.some(c => c.schoolId === a.schoolId && reach(c));
+  if (a.kind === 'class') return reach(S.classes.find(c => c.id === a.classId));
+  if (a.kind === 'teachers') return (a.teacherIds || []).includes(tid);
+  return true;
+}
+const byNewest = (a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || String(b.at).localeCompare(String(a.at));
+// Staff see every notice; a teacher sees live notices addressed to them.
+const myNotices = () => (isStaff() ? notices() : meLocked() ? [] : notices().filter(n => noticeLive(n) && noticeFor(n, S.me?.id))).slice().sort(byNewest);
+const myUnreadNotices = () => isStaff() ? [] : myNotices().filter(n => !n.readBy?.[S.me?.id]);
 const visSems = () => isStaff() ? S.semesters : S.semesters.filter(x => visClasses().some(c => c.semesterId === x.id));
 const visSchools = () => isStaff() ? S.schools : S.schools.filter(x => visClasses().some(c => c.schoolId === x.id && c.semesterId === S.sel.sem));
 const school = () => S.schools.find(s => s.id === S.sel.school);
@@ -723,6 +750,7 @@ function subscribeGlobal() {
     const m = r.find(x => x.id === 'main'); S.settings = m ? { ...m } : { ...DEFAULT_SETTINGS };
     const lb = r.find(x => x.id === 'library'); S.library = lb ? { modules: lb.modules || [], lessons: lb.lessons || [], comments: lb.comments || [] } : null;
     const sf = r.find(x => x.id === 'staff'); S.staff = sf ? { teachers: sf.teachers || [] } : null; S.staffLoaded = true;
+    const nt = r.find(x => x.id === 'notices'); S.notices = nt ? { items: nt.items || [] } : null;
     renderWho(); fixSel();
   }, onErr);
 }
@@ -762,8 +790,13 @@ function renderCtx() {
   $('#selSchool').innerHTML = visSchools().length ? visSchools().map(s => opt(s.id, s.name, S.sel.school)).join('') : '<option value="">Chưa có trường</option>';
   const cls = visClasses().filter(c => c.semesterId === S.sel.sem && c.schoolId === S.sel.school);
   $('#selClass').innerHTML = cls.length ? cls.map(c => opt(c.id, c.name, S.sel.cls)).join('') : '<option value="">Chưa có lớp</option>';
-  if (!isStaff() && !['cham', 'tonghop'].includes(S.sel.tab)) S.sel.tab = 'cham';
-  document.querySelectorAll('#tabs button').forEach(b => { b.setAttribute('aria-selected', String(b.dataset.tab === S.sel.tab)); b.hidden = !isStaff() && !['cham', 'tonghop'].includes(b.dataset.tab); });
+  const TEACHER_TABS = ['cham', 'tonghop', 'thongbao'];
+  if (!isStaff() && !TEACHER_TABS.includes(S.sel.tab)) S.sel.tab = 'cham';
+  const unread = myUnreadNotices().length;
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.setAttribute('aria-selected', String(b.dataset.tab === S.sel.tab)); b.hidden = !isStaff() && !TEACHER_TABS.includes(b.dataset.tab);
+    if (b.dataset.tab === 'thongbao') b.textContent = 'Thông báo' + (unread ? ' (' + unread + ' mới)' : '');
+  });
 }
 ['selSem', 'selSchool', 'selClass'].forEach((id, i) => $('#' + id).addEventListener('change', e => {
   S.sel[['sem', 'school', 'cls'][i]] = e.target.value; S.sel.lesson = ''; S.sel.student = ''; fixSel();
@@ -777,7 +810,7 @@ function render(force) {
   if (!force && a && $('#view').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { renderPending = true; return; }
   renderPending = false;
   const y = window.scrollY;
-  const fn = { cham: viewCham, tonghop: viewTongHop, duyet: viewDuyet, danhmuc: viewDanhMuc, caidat: viewCaiDat }[S.sel.tab] || viewCham;
+  const fn = { cham: viewCham, tonghop: viewTongHop, duyet: viewDuyet, thongbao: viewThongBao, danhmuc: viewDanhMuc, caidat: viewCaiDat }[S.sel.tab] || viewCham;
   $('#view').innerHTML = askBox() + fn();
   window.scrollTo(0, y);
   afterRender();
@@ -883,7 +916,9 @@ function viewCham() {
 
   const K = klass(), tIds = (K?.teacherIds || []).filter(Boolean);
   const myTemp = isTrialTeacher() ? (K?.temps || []).find(x => x.teacherId === S.me.id && tempState(x) === 'active' && accessOf(K, S.me.id) === 'temp') : null;
-  return '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(K?.name) + ' · Buổi ' + (li + 1) + (isBase ? ' <span class="pill" style="color:var(--base)">Mốc đầu kỳ</span>' : '') + '</h2>' +
+  const fresh = myUnreadNotices();
+  const noticeBar = fresh.length ? '<div class="note-box row" style="margin:0"><span class="grow">Bạn có <b>' + fresh.length + ' thông báo mới</b>: ' + esc(fresh.slice(0, 2).map(n => n.title || '(không tiêu đề)').join('; ')) + (fresh.length > 2 ? '…' : '') + '</span><button class="btn small" data-act="goNotices">Xem thông báo</button></div>' : '';
+  return noticeBar + '<section class="panel"><div class="row"><div class="grow"><h2>' + esc(K?.name) + ' · Buổi ' + (li + 1) + (isBase ? ' <span class="pill" style="color:var(--base)">Mốc đầu kỳ</span>' : '') + '</h2>' +
     '<div class="muted">' + esc(fmtDate(L.date)) + ' · ' + esc(L.project || 'Chưa có tên dự án') + (L.content ? ' · ' + esc(L.content) : '') + '</div>' +
     (tIds.length ? '<div class="muted small">Giáo viên: ' + esc(tIds.map(tName).join(', ')) + '</div>' : '') + '</div>' +
     (myTemp ? '<span class="pill blue" title="' + esc(myTemp.reason || '') + '">Bạn dạy thay đến ' + esc(fmtD(myTemp.to)) + '</span>' : '') +
@@ -1106,6 +1141,60 @@ function drawRadar() {
     s += '<text x="' + x + '" y="' + (y + 4) + '" text-anchor="' + anchor + '" font-size="11.5" font-weight="600" fill="var(--ink)">' + esc(c.name) + '</text>';
   });
   el.innerHTML = s + '</svg>';
+}
+
+// ---------- view: Thông báo (managers post; teachers read on their wall) ----------
+function saveNotices(items) { S.notices = { items }; return write(() => Store.set('settings', 'notices', { items })); }
+const linkify = t => esc(t).replace(/(https?:\/\/[^\s<]+)/g, u => '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>');
+function audLabel(n) {
+  const a = n.to || { kind: 'all' };
+  if (a.kind === 'school') return 'giáo viên trường ' + (S.schools.find(s => s.id === a.schoolId)?.name || '?');
+  if (a.kind === 'class') { const c = S.classes.find(x => x.id === a.classId), s = S.semesters.find(x => x.id === c?.semesterId); return 'giáo viên lớp ' + (c?.name || '?') + (s ? ' · ' + s.name + ' ' + s.year : ''); }
+  if (a.kind === 'teachers') return (a.teacherIds || []).map(tName).join(', ') || 'chưa chọn ai';
+  return 'tất cả giáo viên';
+}
+const recipients = n => staff().filter(t => t.active !== false && noticeFor(n, t.id));
+function viewThongBao() {
+  const staffView = isStaff(), list = myNotices();
+  let compose = '';
+  if (staffView) {
+    const F = S.ui.nt || (S.ui.nt = { kind: 'all', teacherIds: [] });
+    const semCls = S.classes.filter(c => c.semesterId === S.sel.sem);
+    const target = F.kind === 'school' ? '<label class="field"><span>Trường</span><select id="nt-school" data-act="nt" data-k="schoolId"><option value="">— chọn —</option>' + S.schools.map(s => '<option value="' + s.id + '"' + (s.id === F.schoolId ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select></label>'
+      : F.kind === 'class' ? '<label class="field"><span>Lớp (học kỳ đang chọn)</span><select id="nt-class" data-act="nt" data-k="classId"><option value="">— chọn —</option>' + semCls.map(c => '<option value="' + c.id + '"' + (c.id === F.classId ? ' selected' : '') + '>' + esc(c.name + ' · ' + (S.schools.find(s => s.id === c.schoolId)?.name || '')) + '</option>').join('') + '</select></label>'
+      : F.kind === 'teachers' ? '<div class="field"><span>Giáo viên nhận</span><div class="row">' + (staff().filter(t => t.active !== false).map(t => '<label class="chk" style="color:var(--ink)"><input type="checkbox" data-act="ntT" value="' + t.id + '"' + ((F.teacherIds || []).includes(t.id) ? ' checked' : '') + '> ' + esc(t.name) + '</label>').join('') || '<span class="muted small">Chưa có tài khoản giáo viên (Danh mục → Giáo viên &amp; phân công).</span>') + '</div></div>' : '';
+    const draft = { to: { kind: F.kind, schoolId: F.schoolId, classId: F.classId, teacherIds: F.teacherIds } };
+    const rc = recipients(draft);
+    compose = '<section class="panel" style="display:grid;gap:10px"><h2>' + (F.editId ? 'Sửa thông báo' : 'Đăng thông báo mới') + '</h2>' +
+      '<label class="field"><span>Tiêu đề</span><input type="text" id="nt-title" data-act="nt" data-k="title" value="' + esc(F.title || '') + '" placeholder="Ví dụ: Lịch họp chuyên môn tháng 12"></label>' +
+      '<label class="field"><span>Nội dung</span><textarea id="nt-body" data-auto data-act="nt" data-k="body" rows="4" placeholder="Viết nội dung, có thể dán đường link.">' + esc(F.body || '') + '</textarea></label>' +
+      '<div class="row"><label class="field"><span>Gửi cho</span><select id="nt-kind" data-act="nt" data-k="kind">' + [['all', 'Tất cả giáo viên'], ['school', 'Giáo viên một trường'], ['class', 'Giáo viên một lớp'], ['teachers', 'Chọn từng giáo viên']].map(([k, l]) => '<option value="' + k + '"' + (k === F.kind ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></label>' + target +
+      '<label class="field"><span>Hiện đến hết ngày (để trống = luôn hiện)</span><input type="date" id="nt-until" data-act="nt" data-k="until" value="' + esc(F.until || '') + '"></label>' +
+      '<label class="chk" style="color:var(--ink);align-self:end"><input type="checkbox" data-act="nt" data-k="pinned"' + (F.pinned ? ' checked' : '') + '> Ghim lên đầu</label></div>' +
+      (staff().length ? '<div class="small muted">Sẽ hiện trên tường của ' + rc.length + ' giáo viên' + (rc.length ? ': ' + esc(rc.map(t => t.name).join(', ')) : '') + '.</div>' : '') +
+      '<div class="row"><button class="btn pri" data-act="ntPost">' + (F.editId ? 'Lưu thay đổi' : 'Đăng thông báo') + '</button>' + (F.editId ? '<button class="btn" data-act="ntCancel">Hủy sửa</button>' : '') + '<span class="small" id="ntMsg" style="color:var(--bad)"></span></div></section>';
+  }
+  const me = S.me?.id;
+  const cards = list.map(n => {
+    const unread = !staffView && !n.readBy?.[me], expired = !noticeLive(n);
+    let foot;
+    if (staffView) {
+      const rc = recipients(n), read = rc.filter(t => n.readBy?.[t.id]), notYet = rc.filter(t => !n.readBy?.[t.id]);
+      foot = '<div class="row">' + (staff().length ? '<span class="small">Đã đọc ' + read.length + '/' + rc.length + ' giáo viên</span>' : '') + '<span class="grow"></span>' +
+        '<button class="btn small" data-act="ntEdit" data-id="' + n.id + '">Sửa</button><button class="btn small" data-act="ntPin" data-id="' + n.id + '">' + (n.pinned ? 'Bỏ ghim' : 'Ghim') + '</button><button class="btn small danger" data-act="ntDel" data-id="' + n.id + '">Xóa</button></div>' +
+        (rc.length ? '<details><summary class="small">Ai đã đọc</summary><ul class="hist">' + read.map(t => '<li>' + esc(t.name) + ' · ' + esc(fmtWhen(n.readBy[t.id])) + '</li>').join('') + notYet.map(t => '<li>' + esc(t.name) + ' · <b>chưa đọc</b></li>').join('') + '</ul></details>' : '');
+    } else foot = '<div class="row"><span class="grow"></span>' + (unread ? '<button class="btn pri small" data-act="ntRead" data-id="' + n.id + '">Đã đọc</button>' : '<span class="small muted">Đã đọc lúc ' + esc(fmtWhen(n.readBy[me])) + '</span>') + '</div>';
+    return '<article class="panel notice' + (n.pinned ? ' pinned' : '') + (unread ? ' unread' : '') + '"><div class="row"><h3 class="grow">' + esc(n.title || '(Không có tiêu đề)') + '</h3>' +
+      (n.pinned ? '<span class="pill ok">Ghim</span>' : '') + (unread ? '<span class="pill rose">Mới</span>' : '') + (expired ? '<span class="pill">Đã hết hạn, giáo viên không còn thấy</span>' : '') + '</div>' +
+      '<div class="muted small">' + esc(n.by || '') + ' · ' + esc(fmtWhen(n.at)) + (n.editedAt ? ' · sửa lúc ' + esc(fmtWhen(n.editedAt)) : '') + ' · Gửi ' + esc(audLabel(n)) + (n.until ? ' · Hiện đến ' + esc(fmtDate(n.until)) : '') + '</div>' +
+      (n.body ? '<div class="nbody">' + linkify(n.body) + '</div>' : '') + foot + '</article>';
+  }).join('');
+  const nUnread = list.filter(n => !staffView && !n.readBy?.[me]).length;
+  return compose +
+    '<section class="panel"><div class="row"><h2 class="grow">' + (staffView ? 'Tất cả thông báo (' + list.length + ')' : 'Tường thông báo của bạn') + '</h2>' +
+    (nUnread > 1 ? '<button class="btn" data-act="ntReadAll">Đánh dấu tất cả đã đọc</button>' : '') + '</div>' +
+    (staffView ? '<p class="muted small" style="margin:0">Giáo viên chỉ thấy thông báo gửi cho mình và còn hạn. Thông báo ghim nằm trên cùng.</p>' : '') + '</section>' +
+    (cards || '<div class="empty"><b>Chưa có thông báo nào</b>' + (staffView ? 'Đăng thông báo đầu tiên ở khung phía trên.' : 'Khi quản lý chuyên môn đăng thông báo cho bạn, thông báo sẽ hiện ở đây.') + '</div>');
 }
 
 // ---------- report workflow: submit, approve, return ----------
@@ -1894,6 +1983,36 @@ $('#view').addEventListener('click', async e => {
     }
     render(true);
   }
+  // notices
+  else if (act === 'ntPost') {
+    const F = S.ui.nt || {}, m = $('#ntMsg');
+    // Fields typed but not yet blurred still count.
+    F.title = ($('#nt-title')?.value || '').trim(); F.body = ($('#nt-body')?.value || '').trim();
+    if (!F.title && !F.body) { m.textContent = 'Cần có tiêu đề hoặc nội dung.'; return; }
+    if (F.kind === 'school' && !F.schoolId) { m.textContent = 'Chọn trường.'; return; }
+    if (F.kind === 'class' && !F.classId) { m.textContent = 'Chọn lớp.'; return; }
+    if (F.kind === 'teachers' && !(F.teacherIds || []).length) { m.textContent = 'Chọn ít nhất một giáo viên.'; return; }
+    const to = { kind: F.kind || 'all', ...(F.kind === 'school' ? { schoolId: F.schoolId } : F.kind === 'class' ? { classId: F.classId } : F.kind === 'teachers' ? { teacherIds: F.teacherIds } : {}) };
+    const fields = { title: F.title, body: F.body, to, pinned: !!F.pinned, until: F.until || '' };
+    const items = notices().map(n => ({ ...n }));
+    if (F.editId) Object.assign(items.find(n => n.id === F.editId) || {}, fields, { editedAt: new Date().toISOString() });
+    else items.push({ id: uid(), ...fields, by: meName(), byId: S.me?.id || '', at: new Date().toISOString(), readBy: {} });
+    await saveNotices(items); setSave('', F.editId ? 'Đã lưu thông báo' : 'Đã đăng thông báo');
+    S.ui.nt = { kind: 'all', teacherIds: [] }; renderCtx(); render(true);
+  }
+  else if (act === 'ntCancel') { S.ui.nt = { kind: 'all', teacherIds: [] }; render(true); }
+  else if (act === 'ntEdit') {
+    const n = notices().find(x => x.id === b.dataset.id); if (!n) return;
+    S.ui.nt = { editId: n.id, title: n.title, body: n.body, kind: n.to?.kind || 'all', schoolId: n.to?.schoolId, classId: n.to?.classId, teacherIds: [...(n.to?.teacherIds || [])], pinned: n.pinned, until: n.until };
+    render(true); window.scrollTo(0, 0);
+  }
+  else if (act === 'ntPin') { await saveNotices(notices().map(n => n.id === b.dataset.id ? { ...n, pinned: !n.pinned } : n)); render(true); }
+  else if (act === 'ntDel') { if (!confirmTwice(b, 'nt' + b.dataset.id)) return; await saveNotices(notices().filter(n => n.id !== b.dataset.id)); renderCtx(); render(true); }
+  else if (act === 'ntRead' || act === 'ntReadAll') {
+    const me = S.me?.id, at = new Date().toISOString(), ids = act === 'ntRead' ? [b.dataset.id] : myUnreadNotices().map(n => n.id);
+    await saveNotices(notices().map(n => ids.includes(n.id) ? { ...n, readBy: { ...(n.readBy || {}), [me]: at } } : n)); renderCtx(); render(true);
+  }
+  else if (act === 'goNotices') { S.sel.tab = 'thongbao'; saveSel(); renderCtx(); render(true); window.scrollTo(0, 0); }
   // transfers, leaving, history
   else if (act === 'stMoveOpen') { S.ui.move = b.dataset.id; S.ui.mv = { kind: 'move' }; S.ui.hist = ''; render(true); }
   else if (act === 'stMoveCancel') { S.ui.move = ''; render(true); }
@@ -2160,6 +2279,12 @@ $('#view').addEventListener('change', async e => {
     write(() => Store.update('classes', cls.id, { teacherIds: ids, assignLog: [...(cls.assignLog || []), { slot, from: old, to: t.value, ...stamp() }] })).then(() => render(true));
   }
   else if (act === 'tmpCls') { S.ui.tmp = { cls: t.value }; render(true); }
+  else if (act === 'nt') {
+    const F = S.ui.nt ||= { kind: 'all', teacherIds: [] }, k = t.dataset.k;
+    F[k] = t.type === 'checkbox' ? t.checked : t.value;
+    if (['kind', 'schoolId', 'classId'].includes(k)) render(true);
+  }
+  else if (act === 'ntT') { const F = S.ui.nt ||= { kind: 'teachers', teacherIds: [] }; F.teacherIds = t.checked ? [...new Set([...(F.teacherIds || []), t.value])] : (F.teacherIds || []).filter(x => x !== t.value); render(true); }
   else if (act === 'mv') { (S.ui.mv ||= {})[t.dataset.k] = t.value; if (t.dataset.k !== 'reason') render(true); }
   else if (act === 'sf') {
     const F = S.ui.sf ||= {}, k = t.dataset.k;
