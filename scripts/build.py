@@ -4,7 +4,7 @@
   python3 scripts/build.py web       -> dist/index.html (+ vendor/, config.js) for GitHub Pages
   python3 scripts/build.py artifact  -> dist/artifact.html (libraries from cdnjs, no Supabase)
 """
-import os, shutil, sys
+import hashlib, os, shutil, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 target = sys.argv[1] if len(sys.argv) > 1 else 'web'
@@ -18,7 +18,9 @@ os.makedirs(dist, exist_ok=True)
 if target == 'web':
     libs = ('<script src="vendor/exceljs.min.js"></script>\n<script src="vendor/jszip.min.js"></script>\n'
             # supabase-js is not vendored: load the pinned UMD build from jsDelivr.
-            '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n<script src="config.js"></script>')
+            '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>\n'
+            # GitHub Pages lets browsers cache files for 10 minutes: version config.js by its content so a change applies at once.
+            '<script src="config.js?v=' + hashlib.sha1(open(os.path.join(ROOT, 'config.js'), 'rb').read()).hexdigest()[:8] + '"></script>')
     page = ('<!doctype html>\n<html lang="vi">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
             '<link rel="icon" href="data:image/png;base64,' + open(os.path.join(ROOT, 'src', 'img1.b64')).read().strip() + '">\n'
